@@ -64,10 +64,11 @@ func commandProcessing(command string) (string, error) {
 	// Execute commands
 	switch cmd {
 	case "/help":
-		return "Here will be print a help message", nil
+		return "/help - print help message\n" +
+			"/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains", nil
 	case "/check":
 		if attr == "" {
-			return "You must specify the URL. Format: \n\t /check [www.checkURL1.com www.checkURL2.com ...]. Use space to check few URLs.", nil
+			return "You must specify the URL. Format: \n\t /check www.checkURL1.com www.checkURL2.com ... Use space to check few URLs.", nil
 		}
 		return certinfo.GetCertsInfo(attr, false), nil
 	default:
