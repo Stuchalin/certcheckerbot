@@ -35,8 +35,8 @@ func GetCertInfo(URL string, printFullChain bool) string {
 		}
 		result += fmt.Sprintf("DNSNames: %s\n", cert.DNSNames)
 		result += fmt.Sprintf("Issuer Name: %s\n", cert.Issuer)
-		result += fmt.Sprintf("Expiry: %s \n", cert.NotAfter.Format("2006-01-02"))
-		result += fmt.Sprintf("Common Name: %s \n", cert.Issuer.CommonName)
+		result += fmt.Sprintf("Expiry: %s\n", cert.NotAfter.Format("2006-01-02"))
+		result += fmt.Sprintf("Common Name: %s\n", cert.Issuer.CommonName)
 
 	}
 	return result + "\n"
