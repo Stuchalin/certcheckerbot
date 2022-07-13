@@ -15,7 +15,6 @@ func TestGetCertInfo(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
 		{
 			name: "test Not URL",
 			args: args{
@@ -30,7 +29,7 @@ func TestGetCertInfo(t *testing.T) {
 				URL:            "google.com",
 				printFullChain: false,
 			},
-			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n",
+			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
 		},
 		{
 			name: "test valid google URL full chain",
@@ -39,7 +38,7 @@ func TestGetCertInfo(t *testing.T) {
 				printFullChain: true,
 			},
 			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: (.|\n)*" +
-				"DNSNames: \\[\\]\nIssuer Name: .*OU=Root CA.*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*Root.*\n",
+				"DNSNames: \\[\\]\nIssuer Name: .*OU=Root CA.*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*Root.*\n\n",
 		},
 	}
 	for _, tt := range tests {
@@ -51,6 +50,59 @@ func TestGetCertInfo(t *testing.T) {
 			}
 			if !res {
 				t.Errorf("GetCertInfo() = %v, regex pattern = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetCertsInfo(t *testing.T) {
+	type args struct {
+		URLs           string
+		printFullChain bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test single valid URL",
+			args: args{
+				URLs:           "google.com",
+				printFullChain: false,
+			},
+			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+		},
+		{
+			name: "test few valid URLs",
+			args: args{
+				URLs:           "google.com github.com wikipedia.com",
+				printFullChain: false,
+			},
+			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+				"DNSNames: .*github\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+				"DNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+		},
+		{
+			name: "test valid and fail URLs",
+			args: args{
+				URLs:           "google.com notValidDomain wikipedia.com",
+				printFullChain: false,
+			},
+			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+				"Cannot check cert from URL notValidDomain\\..*\n\n" +
+				"DNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetCertsInfo(tt.args.URLs, tt.args.printFullChain)
+			res, err := regexp.MatchString(tt.want, got)
+			if err != nil {
+				t.Errorf("GetCertsInfo() - regex error: %s", err)
+			}
+			if !res {
+				t.Errorf("GetCertsInfo() = %v, regex pattern = %v", got, tt.want)
 			}
 		})
 	}
