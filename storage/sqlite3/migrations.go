@@ -5,11 +5,17 @@ import (
 	"errors"
 )
 
+//Migration type for migration
 type Migration struct {
 	Version         int
 	MigrationScript string
 }
 
+//getMigrations slice of database migrations
+//if you need change database struct - add new element to this array
+//Migration.Version - must be a greater, then previous version Migration.Version++
+//Migration.MigrationScript - must contain a valid migration script,
+//that must migrate database from previous version, to the new specified one
 func getMigrations() []Migration {
 	return []Migration{
 		{Version: 1, MigrationScript: "" +
@@ -36,20 +42,7 @@ func getMigrations() []Migration {
 	}
 }
 
-type User struct {
-	Id               int
-	Name             string
-	TGId             string
-	NotificationHour int
-	UTC              int
-	UserDomains      []UserDomain
-}
-
-type UserDomain struct {
-	UserId int
-	Domain string
-}
-
+//isBaseStructExists - checks existing base struct for database
 func isBaseStructExists(db *sql.DB) (bool, error) {
 	if db == nil {
 		return false, errors.New("Nil database connection")
@@ -68,6 +61,7 @@ func isBaseStructExists(db *sql.DB) (bool, error) {
 	}
 }
 
+//GetCurrentDBVersion get version of database
 func GetCurrentDBVersion(db *sql.DB) (int, error) {
 
 	baseStruct, err := isBaseStructExists(db)
