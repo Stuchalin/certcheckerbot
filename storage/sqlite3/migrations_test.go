@@ -123,7 +123,7 @@ func Test_isBaseStructExists_ClosedDatabase(t *testing.T) {
 func Test_isBaseStructExists_ExistBaseStruct(t *testing.T) {
 	dbName, db := init_db()
 	tx, _ := db.Begin()
-	tx.Exec("create table db_versions (version integer)")
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
 	defer remove_db(dbName, db)
 
@@ -194,7 +194,7 @@ func TestGetCurrentDBVersion_NoStruct(t *testing.T) {
 func TestGetCurrentDBVersion_NoVersions(t *testing.T) {
 	dbName, db := init_db()
 	tx, _ := db.Begin()
-	tx.Exec("create table db_versions (version integer)")
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
 	defer remove_db(dbName, db)
 
@@ -231,7 +231,7 @@ func TestGetCurrentDBVersion_NoVersions(t *testing.T) {
 func TestGetCurrentDBVersion_GetMaxVersion(t *testing.T) {
 	dbName, db := init_db()
 	tx, _ := db.Begin()
-	tx.Exec("create table db_versions (version integer) ")
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	insertStatement, _ := tx.Prepare("insert into db_versions(version) values (?)")
 	maxVersion := 0
 	for i := 1; i <= 15; i++ {
@@ -271,6 +271,286 @@ func TestGetCurrentDBVersion_GetMaxVersion(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("GetCurrentDBVersion() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_setDBVersion_correct_nilTran(t *testing.T) {
+	dbName, db := init_db()
+	tx, _ := db.Begin()
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
+	tx.Commit()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		version int
+		db      *sql.DB
+		tx      *sql.Tx
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test correct set db version - nil tran",
+			args: args{
+				version: 1,
+				db:      db,
+				tx:      nil,
+			},
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := setDBVersion(tt.args.version, tt.args.db, tt.args.tx)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setDBVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setDBVersion() got = %v, want %v", got, tt.want)
+				return
+			}
+			rows, _ := db.Query("select version from db_versions where version = ?", tt.args.version)
+			defer rows.Close()
+
+			version := -1
+			for rows.Next() {
+				rows.Scan(&version)
+			}
+			if version != tt.args.version {
+				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
+			}
+		})
+	}
+}
+
+func Test_setDBVersion_correct_sendTran_commit(t *testing.T) {
+	dbName, db := init_db()
+	tx, _ := db.Begin()
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
+	tx.Commit()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		version int
+		db      *sql.DB
+		tx      *sql.Tx
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test correct set db version - send tran commit",
+			args: args{
+				version: 1,
+				db:      db,
+				tx:      nil,
+			},
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx, _ := tt.args.db.Begin()
+			got, err := setDBVersion(tt.args.version, tt.args.db, tx)
+			tx.Commit()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setDBVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setDBVersion() got = %v, want %v", got, tt.want)
+				return
+			}
+			rows, _ := db.Query("select version from db_versions where version = ?", tt.args.version)
+			defer rows.Close()
+
+			version := -1
+			for rows.Next() {
+				rows.Scan(&version)
+			}
+			if version != tt.args.version {
+				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
+			}
+		})
+	}
+}
+
+func Test_setDBVersion_correct_sendTran_rollback(t *testing.T) {
+	dbName, db := init_db()
+	tx, _ := db.Begin()
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
+	tx.Commit()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		version int
+		db      *sql.DB
+		tx      *sql.Tx
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test correct set db version - send tran rollback",
+			args: args{
+				version: 1,
+				db:      db,
+				tx:      nil,
+			},
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx, _ := tt.args.db.Begin()
+			got, err := setDBVersion(tt.args.version, tt.args.db, tx)
+			tx.Rollback()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setDBVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setDBVersion() got = %v, want %v", got, tt.want)
+				return
+			}
+			rows, _ := db.Query("select version from db_versions where version = ?", tt.args.version)
+			defer rows.Close()
+
+			version := -1
+			for rows.Next() {
+				rows.Scan(&version)
+			}
+			if version == tt.args.version {
+				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
+			}
+		})
+	}
+}
+
+func Test_setDBVersion_add_existing_version_nilTran(t *testing.T) {
+	dbName, db := init_db()
+	tx, _ := db.Begin()
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
+	tx.Commit()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		version int
+		db      *sql.DB
+		tx      *sql.Tx
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test add existing version - nil tran",
+			args: args{
+				version: 1,
+				db:      db,
+				tx:      nil,
+			},
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := setDBVersion(tt.args.version, tt.args.db, tt.args.tx)
+			got, err = setDBVersion(tt.args.version, tt.args.db, tt.args.tx)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setDBVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setDBVersion() got = %v, want %v", got, tt.want)
+				return
+			}
+			rows, _ := db.Query("select version from db_versions where version = ?", tt.args.version)
+			defer rows.Close()
+
+			version := -1
+			for rows.Next() {
+				rows.Scan(&version)
+			}
+			if version != tt.args.version {
+				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
+			}
+		})
+	}
+}
+
+func Test_setDBVersion_add_existing_version_sendTran_rollback(t *testing.T) {
+	dbName, db := init_db()
+	tx, _ := db.Begin()
+	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
+	tx.Commit()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		version int
+		db      *sql.DB
+		tx      *sql.Tx
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test add existing version - send tran rollback",
+			args: args{
+				version: 1,
+				db:      db,
+				tx:      nil,
+			},
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tx, _ := tt.args.db.Begin()
+			got, err := setDBVersion(tt.args.version, tt.args.db, tx)
+			got, err = setDBVersion(tt.args.version, tt.args.db, tx)
+			if err != nil {
+				tx.Rollback()
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("setDBVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("setDBVersion() got = %v, want %v", got, tt.want)
+				return
+			}
+			rows, _ := db.Query("select version from db_versions where version = ?", tt.args.version)
+			defer rows.Close()
+
+			version := -1
+			for rows.Next() {
+				rows.Scan(&version)
+			}
+			if version == tt.args.version {
+				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
 			}
 		})
 	}
