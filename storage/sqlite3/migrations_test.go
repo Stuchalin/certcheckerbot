@@ -12,7 +12,7 @@ import (
 func init_db() (string, *sql.DB) {
 	dbName := os.TempDir() + uuid.New().String() + ".db"
 	file, _ := os.Create(dbName)
-	file.Close()
+	_ = file.Close()
 
 	db, _ := sql.Open("sqlite3", dbName)
 
@@ -20,8 +20,8 @@ func init_db() (string, *sql.DB) {
 }
 
 func remove_db(dbName string, db *sql.DB) {
-	db.Close()
-	os.Remove(dbName)
+	_ = db.Close()
+	_ = os.Remove(dbName)
 }
 
 func Test_isBaseStructExists_NoBaseStruct(t *testing.T) {
@@ -551,6 +551,148 @@ func Test_setDBVersion_add_existing_version_sendTran_rollback(t *testing.T) {
 			}
 			if version == tt.args.version {
 				t.Errorf("setDBVersion() getVersion = %v, setVersion %v", version, tt.args.version)
+			}
+		})
+	}
+}
+
+func Test_migrateDatabase(t *testing.T) {
+	dbName, db := init_db()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		migration Migration
+		db        *sql.DB
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test migrateDatabase create version table",
+			args: args{
+				migration: Migration{
+					Version:         1,
+					MigrationScript: "create table db_versions (version integer, PRIMARY KEY (version));",
+				},
+				db: db,
+			},
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := migrateDatabase(tt.args.migration, tt.args.db)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("migrateDatabase() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("migrateDatabase() got = %v, want %v", got, tt.want)
+				return
+			}
+			exists, _ := isBaseStructExists(db)
+			if !exists {
+				t.Errorf("Base struct not created")
+			}
+		})
+	}
+}
+
+func Test_migrateDatabase_versionAlreadyMigrated(t *testing.T) {
+	dbName, db := init_db()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		migration Migration
+		db        *sql.DB
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test migrateDatabase version already migrated",
+			args: args{
+				migration: Migration{
+					Version:         1,
+					MigrationScript: "create table db_versions (version integer, PRIMARY KEY (version));",
+				},
+				db: db,
+			},
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := migrateDatabase(tt.args.migration, tt.args.db)
+			got, err = migrateDatabase(tt.args.migration, tt.args.db)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("migrateDatabase() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			wantErrText := "database already migrate to this version"
+			if (err != nil) && err.Error() != wantErrText {
+				t.Errorf("migrateDatabase() error = %v, wantErr = %v", err.Error(), wantErrText)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("migrateDatabase() got = %v, want %v", got, tt.want)
+				return
+			}
+			exists, _ := isBaseStructExists(db)
+			if !exists {
+				t.Errorf("Base struct not created")
+			}
+		})
+	}
+}
+
+func TestMigrateToActualVersion(t *testing.T) {
+	dbName, db := init_db()
+	defer remove_db(dbName, db)
+
+	type args struct {
+		db *sql.DB
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test MigrateToActualVersion check base migration",
+			args: args{
+				db: db,
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test MigrateToActualVersion error closed connection",
+			args: args{
+				db: nil,
+			},
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := MigrateToActualVersion(tt.args.db)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MigrateToActualVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("MigrateToActualVersion() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

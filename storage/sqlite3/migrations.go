@@ -3,6 +3,7 @@ package sqlite3
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 //Migration type for migration
@@ -16,6 +17,7 @@ type Migration struct {
 //Migration.Version - must be a greater, then previous version Migration.Version++
 //Migration.MigrationScript - must contain a valid migration script,
 //that must migrate database from previous version, to the new specified one
+//ADD ONLY SORTED ARRAY
 func getMigrations() []Migration {
 	return []Migration{
 		{Version: 1, MigrationScript: "" +
@@ -92,14 +94,40 @@ func GetCurrentDBVersion(db *sql.DB) (int, error) {
 	}
 }
 
-//func migrateDatabase(migration Migration, db *sql.DB) (bool, error) {
-//	tx, err := db.Begin()
-//	if err != nil {
-//		return false, err
-//	}
-//
-//	tx.Exec(migration)
-//}
+//migrateDatabase migrate database to sent migration
+func migrateDatabase(migration Migration, db *sql.DB) (bool, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	version, err := GetCurrentDBVersion(db)
+	if err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	if version >= migration.Version {
+		_ = tx.Rollback()
+		return false, errors.New("database already migrate to this version")
+	}
+
+	_, err = tx.Exec(migration.MigrationScript)
+	if err != nil {
+		_ = tx.Rollback()
+		return false, err
+	}
+	_, err = setDBVersion(migration.Version, db, tx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
 
 //setDBVersion insert db version to database
 //version - version to set
@@ -134,6 +162,23 @@ func setDBVersion(version int, db *sql.DB, tx *sql.Tx) (bool, error) {
 		err := tx.Commit()
 		if err != nil {
 			return false, err
+		}
+	}
+	return true, nil
+}
+
+//MigrateToActualVersion migrate database to actual version
+func MigrateToActualVersion(db *sql.DB) (bool, error) {
+	version, err := GetCurrentDBVersion(db)
+	if err != nil {
+		return false, err
+	}
+	for _, migration := range getMigrations() {
+		if version < migration.Version {
+			_, err := migrateDatabase(migration, db)
+			if err != nil {
+				return false, fmt.Errorf("migration error - cannot migrate to version %d (%s)", migration.Version, err.Error())
+			}
 		}
 	}
 	return true, nil
