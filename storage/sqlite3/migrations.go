@@ -82,7 +82,10 @@ func GetCurrentDBVersion(db *sql.DB) (int, error) {
 
 	if record.Next() {
 		var version int
-		record.Scan(&version)
+		err := record.Scan(&version)
+		if err != nil {
+			return -1, err
+		}
 		return version, nil
 	} else {
 		return 0, nil
@@ -116,19 +119,22 @@ func setDBVersion(version int, db *sql.DB, tx *sql.Tx) (bool, error) {
 	stmt, err := tx.Prepare("insert into db_versions(version) values (?)")
 	if err != nil {
 		if runInPersonalTransaction {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 		return false, err
 	}
 	_, err = stmt.Exec(version)
 	if err != nil {
 		if runInPersonalTransaction {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 		return false, err
 	}
 	if runInPersonalTransaction {
-		tx.Commit()
+		err := tx.Commit()
+		if err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }
