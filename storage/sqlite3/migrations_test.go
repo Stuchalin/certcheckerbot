@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func init_db() (string, *sql.DB) {
+func initDb() (string, *sql.DB) {
 	dbName := os.TempDir() + uuid.New().String() + ".db"
 	file, _ := os.Create(dbName)
 	_ = file.Close()
@@ -19,14 +19,14 @@ func init_db() (string, *sql.DB) {
 	return dbName, db
 }
 
-func remove_db(dbName string, db *sql.DB) {
+func removeDb(dbName string, db *sql.DB) {
 	_ = db.Close()
 	_ = os.Remove(dbName)
 }
 
 func Test_isBaseStructExists_NoBaseStruct(t *testing.T) {
-	dbName, db := init_db()
-	defer remove_db(dbName, db)
+	dbName, db := initDb()
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -88,9 +88,9 @@ func Test_isBaseStructExists_NoDatabase(t *testing.T) {
 }
 
 func Test_isBaseStructExists_ClosedDatabase(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	db.Close()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -121,11 +121,11 @@ func Test_isBaseStructExists_ClosedDatabase(t *testing.T) {
 }
 
 func Test_isBaseStructExists_ExistBaseStruct(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -158,8 +158,8 @@ func Test_isBaseStructExists_ExistBaseStruct(t *testing.T) {
 }
 
 func TestGetCurrentDBVersion_NoStruct(t *testing.T) {
-	dbName, db := init_db()
-	defer remove_db(dbName, db)
+	dbName, db := initDb()
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -192,11 +192,11 @@ func TestGetCurrentDBVersion_NoStruct(t *testing.T) {
 }
 
 func TestGetCurrentDBVersion_NoVersions(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -229,7 +229,7 @@ func TestGetCurrentDBVersion_NoVersions(t *testing.T) {
 }
 
 func TestGetCurrentDBVersion_GetMaxVersion(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	insertStatement, _ := tx.Prepare("insert into db_versions(version) values (?)")
@@ -244,7 +244,7 @@ func TestGetCurrentDBVersion_GetMaxVersion(t *testing.T) {
 		}
 	}
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
@@ -277,11 +277,11 @@ func TestGetCurrentDBVersion_GetMaxVersion(t *testing.T) {
 }
 
 func Test_setDBVersion_correct_nilTran(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		version int
@@ -331,11 +331,11 @@ func Test_setDBVersion_correct_nilTran(t *testing.T) {
 }
 
 func Test_setDBVersion_correct_sendTran_commit(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		version int
@@ -387,11 +387,11 @@ func Test_setDBVersion_correct_sendTran_commit(t *testing.T) {
 }
 
 func Test_setDBVersion_correct_sendTran_rollback(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		version int
@@ -443,11 +443,11 @@ func Test_setDBVersion_correct_sendTran_rollback(t *testing.T) {
 }
 
 func Test_setDBVersion_add_existing_version_nilTran(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		version int
@@ -498,11 +498,11 @@ func Test_setDBVersion_add_existing_version_nilTran(t *testing.T) {
 }
 
 func Test_setDBVersion_add_existing_version_sendTran_rollback(t *testing.T) {
-	dbName, db := init_db()
+	dbName, db := initDb()
 	tx, _ := db.Begin()
 	tx.Exec("create table db_versions (version integer, PRIMARY KEY (version));")
 	tx.Commit()
-	defer remove_db(dbName, db)
+	defer removeDb(dbName, db)
 
 	type args struct {
 		version int
@@ -557,8 +557,8 @@ func Test_setDBVersion_add_existing_version_sendTran_rollback(t *testing.T) {
 }
 
 func Test_migrateDatabase(t *testing.T) {
-	dbName, db := init_db()
-	defer remove_db(dbName, db)
+	dbName, db := initDb()
+	defer removeDb(dbName, db)
 
 	type args struct {
 		migration Migration
@@ -603,8 +603,8 @@ func Test_migrateDatabase(t *testing.T) {
 }
 
 func Test_migrateDatabase_versionAlreadyMigrated(t *testing.T) {
-	dbName, db := init_db()
-	defer remove_db(dbName, db)
+	dbName, db := initDb()
+	defer removeDb(dbName, db)
 
 	type args struct {
 		migration Migration
@@ -655,8 +655,8 @@ func Test_migrateDatabase_versionAlreadyMigrated(t *testing.T) {
 }
 
 func TestMigrateToActualVersion(t *testing.T) {
-	dbName, db := init_db()
-	defer remove_db(dbName, db)
+	dbName, db := initDb()
+	defer removeDb(dbName, db)
 
 	type args struct {
 		db *sql.DB
