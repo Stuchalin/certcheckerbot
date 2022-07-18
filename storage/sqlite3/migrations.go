@@ -26,12 +26,11 @@ func getMigrations() []Migration {
 			"	PRIMARY KEY (Version)" +
 			");" +
 			"CREATE TABLE Users (" +
-			"	Id INTEGER AUTOINCREMENT," +
+			"	Id INTEGER primary key autoincrement," +
 			"	Name VARCHAR(4000)," +
 			"	TGId VARCHAR(255)," +
 			"	NotificationHour INTEGER," +
-			"	UTC INTEGER," +
-			"	PRIMARY KEY (Id)" +
+			"	UTC INTEGER" +
 			");" +
 			"CREATE UNIQUE INDEX IX_Users_TGId ON Users(TGId);" +
 			"CREATE INDEX IX_Users_Name ON Users(Name);" +
