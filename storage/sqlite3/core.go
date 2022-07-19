@@ -25,6 +25,11 @@ func NewDB(databaseName string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = MigrateToActualVersion(db)
 	if err != nil {
 		return nil, err
