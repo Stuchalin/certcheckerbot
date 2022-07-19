@@ -42,7 +42,7 @@ func TestNewController(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewController(tt.args.databaseName)
-			defer DisposeController(got)
+			defer got.Dispose()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewController() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -91,7 +91,7 @@ func TestSqlite3Controller_AddUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			controller, _ := NewController(dbName)
-			defer DisposeController(controller)
+			defer controller.Dispose()
 
 			got, err := controller.AddUser(tt.args.user)
 			if (err != nil) != tt.wantErr {
@@ -156,7 +156,7 @@ func TestSqlite3Controller_GetUserByTGId(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 			if tt.want != nil {
 				tt.want.Id, _ = db.AddUser(tt.want)
 			}
@@ -211,7 +211,7 @@ func TestSqlite3Controller_GetUserName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 			if tt.want != nil {
 				tt.want.Id, _ = db.AddUser(tt.want)
 			}
@@ -256,7 +256,7 @@ func TestSqlite3Controller_AddUserDomain_FK_error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			got, err := db.AddUserDomain(tt.args.domain)
 			if (err != nil) != tt.wantErr {
@@ -301,7 +301,7 @@ func TestSqlite3Controller_AddUserDomain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -342,7 +342,7 @@ func TestSqlite3Controller_GetUserDomains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -398,7 +398,7 @@ func TestSqlite3Controller_GetUserDomains_no_domains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -436,7 +436,7 @@ func TestSqlite3Controller_RemoveUserDomain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -507,7 +507,7 @@ func Test_removeAllUserDomains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -580,7 +580,7 @@ func TestSqlite3Controller_RemoveUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			user := storage.User{
 				Name: "test",
@@ -657,7 +657,7 @@ func TestSqlite3Controller_UpdateUserInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db, _ := NewController(dbName)
-			defer DisposeController(db)
+			defer db.Dispose()
 
 			userStart := storage.User{
 				Name: "test",

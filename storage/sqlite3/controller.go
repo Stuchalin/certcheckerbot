@@ -343,7 +343,7 @@ func (db *Sqlite3Controller) GetUserDomains(user *storage.User) (*[]storage.User
 	return nil, fmt.Errorf("cannot find user domains for user %s", user.Name)
 }
 
-//DisposeController - close connections to database
-func DisposeController(db *Sqlite3Controller) {
+//Dispose - close connections to database
+func (db *Sqlite3Controller) Dispose() {
 	CloseConnection(db.Connection)
 }
