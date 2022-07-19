@@ -19,8 +19,6 @@ func NewBot(botKey string, db storage.UsersConfig) (*Bot, error) {
 		return nil, err
 	}
 
-	botApi.Debug = true
-
 	log.Printf("Authorized on account %s", botApi.Self.UserName)
 
 	bot := Bot{
