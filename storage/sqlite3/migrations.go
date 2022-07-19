@@ -82,12 +82,15 @@ func GetCurrentDBVersion(db *sql.DB) (int, error) {
 	defer record.Close()
 
 	if record.Next() {
-		var version int
+		var version sql.NullInt64
 		err := record.Scan(&version)
 		if err != nil {
 			return -1, err
 		}
-		return version, nil
+		if !version.Valid {
+			return 0, nil
+		}
+		return int(version.Int64), nil
 	} else {
 		return 0, nil
 	}
