@@ -9,7 +9,7 @@ import (
 
 func NewDB(databaseName string) (*sql.DB, error) {
 
-	if _, err := os.Stat("/path/to/whatever"); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(databaseName); errors.Is(err, os.ErrNotExist) {
 		file, err := os.Create(databaseName)
 		if err != nil {
 			return nil, err
