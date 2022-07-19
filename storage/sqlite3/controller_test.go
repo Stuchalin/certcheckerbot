@@ -2,7 +2,7 @@ package sqlite3
 
 import (
 	storage "certcheckerbot/storage"
-	"fmt"
+	"errors"
 	"github.com/google/uuid"
 	"os"
 	"reflect"
@@ -388,11 +388,11 @@ func TestSqlite3Controller_GetUserDomains_no_domains(t *testing.T) {
 
 	tests := []struct {
 		name string
-		want string
+		want error
 	}{
 		{
 			name: "test GetUserDomains no domains",
-			want: "cannot find user domains for user test",
+			want: storage.ErrorUserNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -410,7 +410,7 @@ func TestSqlite3Controller_GetUserDomains_no_domains(t *testing.T) {
 				t.Errorf("GetUserDomains() expected error  %s", tt.want)
 				return
 			}
-			if err.Error() != tt.want {
+			if errors.Is(err, tt.want) {
 				t.Errorf("GetUserDomains()  got %v, want %v", err, tt.want)
 				return
 			}
@@ -492,16 +492,16 @@ func Test_removeAllUserDomains(t *testing.T) {
 	defer removeDbFile(dbName)
 
 	tests := []struct {
-		name       string
-		want       bool
-		wantErr    bool
-		errMessage string
+		name    string
+		want    bool
+		wantErr bool
+		err     error
 	}{
 		{
-			name:       "test removeAllUserDomains success",
-			want:       true,
-			wantErr:    false,
-			errMessage: "cannot find user domains for user test",
+			name:    "test removeAllUserDomains success",
+			want:    true,
+			wantErr: false,
+			err:     storage.ErrorUserDomainNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -547,11 +547,11 @@ func Test_removeAllUserDomains(t *testing.T) {
 			}
 			_, err = db.GetUserDomains(&user)
 			if err == nil {
-				t.Errorf("removeAllUserDomains() expected error %s", tt.errMessage)
+				t.Errorf("removeAllUserDomains() expected error %s", tt.err)
 				return
 			}
-			if err.Error() != tt.errMessage {
-				t.Errorf("removeAllUserDomains() got = %v, want %s", err, tt.errMessage)
+			if !errors.Is(err, tt.err) {
+				t.Errorf("removeAllUserDomains() got = %v, want %s", err, tt.err)
 				return
 			}
 		})
@@ -563,18 +563,18 @@ func TestSqlite3Controller_RemoveUser(t *testing.T) {
 	defer removeDbFile(dbName)
 
 	tests := []struct {
-		name              string
-		want              bool
-		wantErr           bool
-		errMessageDomains string
-		errMessageUser    string
+		name       string
+		want       bool
+		wantErr    bool
+		errDomains error
+		errUser    error
 	}{
 		{
-			name:              "test RemoveUser success",
-			want:              true,
-			wantErr:           false,
-			errMessageDomains: "cannot find user domains for user test",
-			errMessageUser:    "cannot find user by id",
+			name:       "test RemoveUser success",
+			want:       true,
+			wantErr:    false,
+			errDomains: storage.ErrorUserDomainNotFound,
+			errUser:    storage.ErrorUserNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -618,21 +618,20 @@ func TestSqlite3Controller_RemoveUser(t *testing.T) {
 			}
 			_, err = db.GetUserDomains(&user)
 			if err == nil {
-				t.Errorf("RemoveUser() expected error %s", tt.errMessageDomains)
+				t.Errorf("RemoveUser() expected error %s", tt.errDomains)
 				return
 			}
-			if err.Error() != tt.errMessageDomains {
-				t.Errorf("RemoveUser() got = %v, want %s", err, tt.errMessageDomains)
+			if !errors.Is(err, tt.errDomains) {
+				t.Errorf("RemoveUser() got = %v, want %s", err, tt.errDomains)
 				return
 			}
 			_, err = db.GetUserById(user.Id)
-			tt.errMessageUser = tt.errMessageUser + " " + fmt.Sprint(user.Id)
 			if err == nil {
-				t.Errorf("RemoveUser() expected error %s", tt.errMessageUser)
+				t.Errorf("RemoveUser() expected error %s", tt.errUser)
 				return
 			}
-			if err.Error() != tt.errMessageUser {
-				t.Errorf("RemoveUser() got = %v, want %s", err, tt.errMessageUser)
+			if !errors.Is(err, tt.errUser) {
+				t.Errorf("RemoveUser() got = %v, want %s", err, tt.errUser)
 				return
 			}
 		})

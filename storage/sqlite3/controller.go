@@ -3,7 +3,6 @@ package sqlite3
 import (
 	"certcheckerbot/storage"
 	"database/sql"
-	"fmt"
 )
 
 //Sqlite3Controller controller for sqlite3 database
@@ -269,7 +268,7 @@ func (db *Sqlite3Controller) GetUserById(id int) (*storage.User, error) {
 		return &user, nil
 	}
 
-	return nil, fmt.Errorf("cannot find user by id %d", id)
+	return nil, storage.ErrorUserNotFound
 }
 
 //GetUserByTGId - search user from database by TGId
@@ -291,7 +290,7 @@ func (db *Sqlite3Controller) GetUserByTGId(tgId int64) (*storage.User, error) {
 		return &user, nil
 	}
 
-	return nil, fmt.Errorf("cannot find user by tgId %d", tgId)
+	return nil, storage.ErrorUserNotFound
 }
 
 //GetUserByName - search user from database by name
@@ -313,7 +312,7 @@ func (db *Sqlite3Controller) GetUserByName(name string) (*storage.User, error) {
 		return &user, nil
 	}
 
-	return nil, fmt.Errorf("cannot find user by Name %s", name)
+	return nil, storage.ErrorUserNotFound
 }
 
 //GetUserDomains - select user domains from database
@@ -340,7 +339,7 @@ func (db *Sqlite3Controller) GetUserDomains(user *storage.User) (*[]storage.User
 		return &userDomains, nil
 	}
 
-	return nil, fmt.Errorf("cannot find user domains for user %s", user.Name)
+	return nil, storage.ErrorUserDomainNotFound
 }
 
 //Dispose - close connections to database
