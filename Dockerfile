@@ -2,6 +2,7 @@ FROM golang:1.18-alpine
 
 WORKDIR /app
 RUN apk add build-base
+RUN apk add sqlite
 
 COPY go.mod ./
 COPY go.sum ./
