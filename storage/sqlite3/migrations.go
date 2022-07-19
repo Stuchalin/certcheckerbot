@@ -28,7 +28,7 @@ func getMigrations() []Migration {
 			"CREATE TABLE Users (" +
 			"	Id INTEGER primary key autoincrement," +
 			"	Name VARCHAR(4000)," +
-			"	TGId VARCHAR(255)," +
+			"	TGId INTEGER," +
 			"	NotificationHour INTEGER," +
 			"	UTC INTEGER" +
 			");" +

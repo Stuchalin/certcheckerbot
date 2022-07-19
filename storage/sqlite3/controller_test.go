@@ -80,7 +80,7 @@ func TestSqlite3Controller_AddUser(t *testing.T) {
 			name: "test Sqlite3Controller_AddUser correct",
 			args: args{user: &storage.User{
 				Name:             "test",
-				TGId:             "test",
+				TGId:             111,
 				NotificationHour: 1,
 				UTC:              1,
 			}},
@@ -123,7 +123,7 @@ func TestSqlite3Controller_GetUserByTGId(t *testing.T) {
 	defer removeDbFile(dbName)
 
 	type args struct {
-		tgId string
+		tgId int64
 	}
 	tests := []struct {
 		name    string
@@ -134,11 +134,11 @@ func TestSqlite3Controller_GetUserByTGId(t *testing.T) {
 		{
 			name: "test GetUserByTGId",
 			args: args{
-				tgId: "test",
+				tgId: 11,
 			},
 			want: &storage.User{
 				Name:             "test",
-				TGId:             "test",
+				TGId:             11,
 				NotificationHour: 0,
 				UTC:              0,
 			},
@@ -147,7 +147,7 @@ func TestSqlite3Controller_GetUserByTGId(t *testing.T) {
 		{
 			name: "test GetUserByTGId - fail to find",
 			args: args{
-				tgId: "test2",
+				tgId: 12,
 			},
 			want:    nil,
 			wantErr: true,
@@ -193,7 +193,7 @@ func TestSqlite3Controller_GetUserName(t *testing.T) {
 			},
 			want: &storage.User{
 				Name:             "test",
-				TGId:             "test",
+				TGId:             11,
 				NotificationHour: 0,
 				UTC:              0,
 			},
@@ -305,7 +305,7 @@ func TestSqlite3Controller_AddUserDomain(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, _ = db.AddUser(&user)
@@ -346,7 +346,7 @@ func TestSqlite3Controller_GetUserDomains(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, _ = db.AddUser(&user)
@@ -402,7 +402,7 @@ func TestSqlite3Controller_GetUserDomains_no_domains(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, err := db.GetUserDomains(&user)
@@ -440,7 +440,7 @@ func TestSqlite3Controller_RemoveUserDomain(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, _ = db.AddUser(&user)
@@ -511,7 +511,7 @@ func Test_removeAllUserDomains(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, _ = db.AddUser(&user)
@@ -584,7 +584,7 @@ func TestSqlite3Controller_RemoveUser(t *testing.T) {
 
 			user := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			_, _ = db.AddUser(&user)
@@ -661,12 +661,12 @@ func TestSqlite3Controller_UpdateUserInfo(t *testing.T) {
 
 			userStart := storage.User{
 				Name: "test",
-				TGId: "test",
+				TGId: 11,
 			}
 
 			userChanged := storage.User{
 				Name:             "test new",
-				TGId:             "test new",
+				TGId:             12,
 				NotificationHour: 10,
 				UTC:              10,
 			}

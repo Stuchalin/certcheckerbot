@@ -273,7 +273,7 @@ func (db *Sqlite3Controller) GetUserById(id int) (*storage.User, error) {
 }
 
 //GetUserByTGId - search user from database by TGId
-func (db *Sqlite3Controller) GetUserByTGId(tgId string) (*storage.User, error) {
+func (db *Sqlite3Controller) GetUserByTGId(tgId int64) (*storage.User, error) {
 	record, err := db.Connection.Query("select Id, Name, TGId, NotificationHour, UTC from Users where TGId = ?;", tgId)
 	if err != nil {
 		return nil, err
@@ -291,7 +291,7 @@ func (db *Sqlite3Controller) GetUserByTGId(tgId string) (*storage.User, error) {
 		return &user, nil
 	}
 
-	return nil, fmt.Errorf("cannot find user by tgId %s", tgId)
+	return nil, fmt.Errorf("cannot find user by tgId %d", tgId)
 }
 
 //GetUserByName - search user from database by name

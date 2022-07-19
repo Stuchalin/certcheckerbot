@@ -3,7 +3,7 @@ package storage
 type User struct {
 	Id               int
 	Name             string
-	TGId             string
+	TGId             int64
 	NotificationHour int
 	UTC              int
 	UserDomains      []UserDomain
