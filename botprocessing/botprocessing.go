@@ -13,11 +13,13 @@ type Bot struct {
 	db     storage.UsersConfig
 }
 
-func NewBot(botKey string, db storage.UsersConfig) (*Bot, error) {
+func NewBot(botKey string, db storage.UsersConfig, debug bool) (*Bot, error) {
 	botApi, err := tgbotapi.NewBotAPI(botKey)
 	if err != nil {
 		return nil, err
 	}
+
+	botApi.Debug = debug
 
 	log.Printf("Authorized on account %s", botApi.Self.UserName)
 

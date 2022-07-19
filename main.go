@@ -5,6 +5,7 @@ import (
 	"certcheckerbot/storage/sqlite3"
 	"log"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -15,7 +16,12 @@ func main() {
 	}
 	defer db.Dispose()
 
-	myBot, err := botprocessing.NewBot(os.Getenv("BOT_KEY"), db)
+	debug, err := strconv.ParseBool(os.Getenv("DEBUG"))
+	if err != nil {
+		log.Printf("\nConvert debug value error - %v. Default debug set to false.\n", err)
+		debug = false
+	}
+	myBot, err := botprocessing.NewBot(os.Getenv("BOT_KEY"), db, debug)
 	if err != nil {
 		log.Panic(err)
 	}
