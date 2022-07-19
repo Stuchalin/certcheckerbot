@@ -2,39 +2,51 @@ package botprocessing
 
 import (
 	"certcheckerbot/certinfo"
+	"certcheckerbot/storage"
+	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strings"
 )
 
-func NewBot(botKey string) (*tgbotapi.BotAPI, error) {
-	bot, err := tgbotapi.NewBotAPI(botKey)
+type Bot struct {
+	BotAPI *tgbotapi.BotAPI
+	db     storage.UsersConfig
+}
+
+func NewBot(botKey string, db storage.UsersConfig, debug bool) (*Bot, error) {
+	botApi, err := tgbotapi.NewBotAPI(botKey)
 	if err != nil {
 		return nil, err
 	}
 
-	bot.Debug = true
+	botApi.Debug = debug
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Authorized on account %s", botApi.Self.UserName)
 
-	return bot, nil
+	bot := Bot{
+		BotAPI: botApi,
+		db:     db,
+	}
+
+	return &bot, nil
 }
 
-func StartProcessing(bot *tgbotapi.BotAPI) chan error {
+func (bot *Bot) StartProcessing() chan error {
 
 	errorsChan := make(chan error, 10)
 
-	go startProcessing(bot, errorsChan)
+	go bot.startProcessing(errorsChan)
 
 	return errorsChan
 }
 
-func startProcessing(bot *tgbotapi.BotAPI, errorsChan chan error) {
+func (bot *Bot) startProcessing(errorsChan chan error) {
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	updates := bot.BotAPI.GetUpdatesChan(u)
 
 	for update := range updates {
 		if update.Message != nil { // If we got a message
@@ -43,12 +55,19 @@ func startProcessing(bot *tgbotapi.BotAPI, errorsChan chan error) {
 			command := update.Message.Text
 			command = strings.Trim(command, " ")
 			if command[:1] == "/" {
-				msgText := commandProcessing(command)
+
+				user := storage.User{
+					Name: update.Message.From.UserName,
+					TGId: update.Message.From.ID,
+				}
+				bot.addUserIfNotExists(&user)
+
+				msgText := bot.commandProcessing(command, &user)
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				msg.ReplyToMessageID = update.Message.MessageID
 
-				_, err := bot.Send(msg)
+				_, err := bot.BotAPI.Send(msg)
 				if err != nil {
 					log.Println("Error in Dial", err)
 					errorsChan <- err
@@ -58,8 +77,8 @@ func startProcessing(bot *tgbotapi.BotAPI, errorsChan chan error) {
 	}
 }
 
-// Processing known commands
-func commandProcessing(command string) string {
+//commandProcessing - Processing known commands
+func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 	// Parse command and attributes
 	i := strings.Index(command, " ")
 	cmd := command
@@ -85,4 +104,31 @@ func commandProcessing(command string) string {
 	default:
 		return "Use /help command"
 	}
+}
+
+//addUserIfNotExists - add new user to storage
+func (bot *Bot) addUserIfNotExists(user *storage.User) {
+	savedUser, err := bot.db.GetUserByTGId(user.TGId)
+	if err != nil {
+		if errors.Is(err, storage.ErrorUserNotFound) {
+			_, err := bot.db.AddUser(user)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			return
+		}
+		log.Println(err)
+		return
+	}
+	if user.Name != savedUser.Name {
+		savedUser.Name = user.Name
+		_, err2 := bot.db.UpdateUserInfo(savedUser)
+		if err2 != nil {
+			log.Println(err2)
+			return
+		}
+	}
+	user = savedUser
+	return
 }
