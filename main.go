@@ -2,17 +2,25 @@ package main
 
 import (
 	"certcheckerbot/botprocessing"
+	"certcheckerbot/storage/sqlite3"
 	"log"
 	"os"
 )
 
 func main() {
-	myBot, err := botprocessing.NewBot(os.Getenv("BOT_KEY"))
+	dbPath := os.Getenv("DB_PATH")
+	db, err := sqlite3.NewController(dbPath)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer db.Dispose()
+
+	myBot, err := botprocessing.NewBot(os.Getenv("BOT_KEY"), db)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	errorsBot := botprocessing.StartProcessing(myBot)
+	errorsBot := myBot.StartProcessing()
 
 	for {
 		select {

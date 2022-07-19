@@ -2,29 +2,40 @@ package botprocessing
 
 import (
 	"certcheckerbot/certinfo"
+	"certcheckerbot/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strings"
 )
 
-func NewBot(botKey string) (*tgbotapi.BotAPI, error) {
-	bot, err := tgbotapi.NewBotAPI(botKey)
+type Bot struct {
+	BotAPI *tgbotapi.BotAPI
+	db     storage.UsersConfig
+}
+
+func NewBot(botKey string, db storage.UsersConfig) (*Bot, error) {
+	botApi, err := tgbotapi.NewBotAPI(botKey)
 	if err != nil {
 		return nil, err
 	}
 
-	bot.Debug = true
+	botApi.Debug = true
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Printf("Authorized on account %s", botApi.Self.UserName)
 
-	return bot, nil
+	bot := Bot{
+		BotAPI: botApi,
+		db:     db,
+	}
+
+	return &bot, nil
 }
 
-func StartProcessing(bot *tgbotapi.BotAPI) chan error {
+func (bot *Bot) StartProcessing() chan error {
 
 	errorsChan := make(chan error, 10)
 
-	go startProcessing(bot, errorsChan)
+	go startProcessing(bot.BotAPI, errorsChan)
 
 	return errorsChan
 }
