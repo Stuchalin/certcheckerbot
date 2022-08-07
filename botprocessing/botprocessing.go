@@ -107,7 +107,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 		if attr == "" {
 			return "You must specify the reminder hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\""
 		}
-		if hour, err := strconv.Atoi(attr); err == nil || hour < 0 || hour > 23 {
+		if hour, err := strconv.Atoi(attr); err != nil || hour < 0 || hour > 23 {
 			return "Reminder hour must be integer number in 0..23 range."
 		}
 		return fmt.Sprintf("Reminder hour is successful set on %s", attr)
