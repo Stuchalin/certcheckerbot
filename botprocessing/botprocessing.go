@@ -58,13 +58,13 @@ func (bot *Bot) startProcessing(errorsChan chan error) {
 			command = strings.Trim(command, " ")
 			if command[:1] == "/" {
 
-				user := storage.User{
+				user := &storage.User{
 					Name: update.Message.From.UserName,
 					TGId: update.Message.From.ID,
 				}
-				bot.addUserIfNotExists(&user)
+				user = bot.addUserIfNotExists(user)
 
-				msgText := bot.commandProcessing(command, &user)
+				msgText := bot.commandProcessing(command, user)
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				msg.ReplyToMessageID = update.Message.MessageID
@@ -134,28 +134,28 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 }
 
 //addUserIfNotExists - add new user to storage
-func (bot *Bot) addUserIfNotExists(user *storage.User) {
+func (bot *Bot) addUserIfNotExists(user *storage.User) *storage.User {
 	savedUser, err := bot.db.GetUserByTGId(user.TGId)
 	if err != nil {
 		if errors.Is(err, storage.ErrorUserNotFound) {
-			_, err := bot.db.AddUser(user)
+			user.Id, err = bot.db.AddUser(user)
 			if err != nil {
 				log.Println(err)
-				return
+				return nil
 			}
-			return
+			return user
 		}
 		log.Println(err)
-		return
+		return nil
 	}
 	if user.Name != savedUser.Name {
 		savedUser.Name = user.Name
 		_, err2 := bot.db.UpdateUserInfo(savedUser)
 		if err2 != nil {
 			log.Println(err2)
-			return
+			return nil
 		}
 	}
 	user = savedUser
-	return
+	return user
 }
