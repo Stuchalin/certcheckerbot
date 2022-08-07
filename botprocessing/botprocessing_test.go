@@ -54,9 +54,11 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/help",
 			},
-			want: "/help - print help message\n" +
-				"/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
-				"/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.",
+			want: "Simple bot for check certificates expire dates\n" +
+				"version 0.1\n" +
+				"\t/help - print help message\n" +
+				"\t/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
+				"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.",
 		},
 		{
 			name:   "test empty command",
