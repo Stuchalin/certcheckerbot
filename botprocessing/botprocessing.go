@@ -130,6 +130,31 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			log.Println("Internal error: cannot update user notification hour")
 			return "Internal error: cannot update user notification hour"
 		}
+	case "/set_tz":
+		if attr == "" {
+			return "You must specify the timezone. Format: \n\t /set_tz [-11..14]. For example: \"/set_tz 3\""
+		}
+		attr = strings.Replace(attr, "+", "", -1)
+		tz, err := strconv.Atoi(attr)
+		if err != nil || tz < -11 || tz > 14 {
+			return "Timezone must be integer number in -11..14 range."
+		}
+		if user == nil {
+			log.Println("Internal error: user not identified")
+			return "Internal error: user not identified"
+		}
+		user.UTC = tz
+		result, err := bot.db.UpdateUserInfo(user)
+		if err != nil {
+			log.Println(err)
+			return fmt.Sprintf("Internal error: cannot set timezone to %s", attr)
+		}
+		if result {
+			return fmt.Sprintf("Timezone is successful set on %s", attr)
+		} else {
+			log.Println("Internal error: cannot update timezone")
+			return "Internal error: cannot update timezone"
+		}
 
 	default:
 		return "Use /help command"
