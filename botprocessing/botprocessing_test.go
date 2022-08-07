@@ -2,11 +2,37 @@ package botprocessing
 
 import (
 	"certcheckerbot/storage"
+	"certcheckerbot/storage/sqlite3"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
+	"os"
 	"testing"
 )
 
+func getTempDBName() string {
+	return os.TempDir() + uuid.New().String() + ".db"
+}
+
+func removeDbFile(dbName string) {
+	_ = os.Remove(dbName)
+}
+
 func TestBot_commandProcessing(t *testing.T) {
+	dbName := getTempDBName()
+	defer removeDbFile(dbName)
+
+	db, _ := sqlite3.NewController(dbName)
+	defer db.Dispose()
+
+	user := storage.User{
+		Id:               1,
+		Name:             "test user",
+		TGId:             123,
+		NotificationHour: 0,
+		UTC:              0,
+	}
+	_, _ = db.AddUser(&user)
+
 	type fields struct {
 		BotAPI *tgbotapi.BotAPI
 		db     storage.UsersConfig
@@ -95,10 +121,34 @@ func TestBot_commandProcessing(t *testing.T) {
 			want: "Notification hour must be integer number in 0..23 range.",
 		},
 		{
-			name:   "test /set_hour success test",
+			name:   "test /set_hour user not identified",
 			fields: fields{},
 			args: args{
 				user:    nil,
+				command: "/set_hour 23",
+			},
+			want: "Internal error: user not identified",
+		},
+		{
+			name:   "test /set_hour no user for update",
+			fields: fields{db: db},
+			args: args{
+				user: &storage.User{
+					Id:               -100,
+					Name:             "test user",
+					TGId:             123,
+					NotificationHour: 0,
+					UTC:              0,
+				},
+				command: "/set_hour 23",
+			},
+			want: "Internal error: cannot update user notification hour",
+		},
+		{
+			name:   "test /set_hour success test",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
 				command: "/set_hour 23",
 			},
 			want: "Notification hour is successful set on 23",
