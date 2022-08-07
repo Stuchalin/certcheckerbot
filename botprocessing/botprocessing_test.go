@@ -47,6 +47,7 @@ func TestBot_commandProcessing(t *testing.T) {
 		args   args
 		want   string
 	}{
+		//help command
 		{
 			name:   "test /help",
 			fields: fields{},
@@ -60,6 +61,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				"\t/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
 				"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.",
 		},
+		//empty command
 		{
 			name:   "test empty command",
 			fields: fields{},
@@ -69,6 +71,7 @@ func TestBot_commandProcessing(t *testing.T) {
 			},
 			want: "Use /help command",
 		},
+		//unknown command
 		{
 			name:   "test unknown command",
 			fields: fields{},
@@ -78,6 +81,7 @@ func TestBot_commandProcessing(t *testing.T) {
 			},
 			want: "Use /help command",
 		},
+		//set_hour
 		{
 			name:   "test /set_hour with no attrs",
 			fields: fields{},
@@ -155,6 +159,103 @@ func TestBot_commandProcessing(t *testing.T) {
 				command: "/set_hour 23",
 			},
 			want: "Notification hour is successful set on 23",
+		},
+		//set_tz
+		{
+			name:   "test /set_tz with no attrs",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz",
+			},
+			want: "You must specify the timezone. Format: \n\t /set_tz [-11..14]. For example: \"/set_tz 3\"",
+		},
+		{
+			name:   "test /set_tz not int tz",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz qwe",
+			},
+			want: "Timezone must be integer number in -11..14 range.",
+		},
+		{
+			name:   "test /set_tz decimal tz",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz 1.1",
+			},
+			want: "Timezone must be integer number in -11..14 range.",
+		},
+		{
+			name:   "test /set_tz not correct tz -12",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz -12",
+			},
+			want: "Timezone must be integer number in -11..14 range.",
+		},
+		{
+			name:   "test /set_tz not correct tz 15",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz 15",
+			},
+			want: "Timezone must be integer number in -11..14 range.",
+		},
+		{
+			name:   "test /set_tz user not identified",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_tz 3",
+			},
+			want: "Internal error: user not identified",
+		},
+		{
+			name:   "test /set_tz no user for update",
+			fields: fields{db: db},
+			args: args{
+				user: &storage.User{
+					Id:               -100,
+					Name:             "test user",
+					TGId:             123,
+					NotificationHour: 0,
+					UTC:              0,
+				},
+				command: "/set_tz 3",
+			},
+			want: "Internal error: cannot update timezone",
+		},
+		{
+			name:   "test /set_tz success test",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/set_tz 3",
+			},
+			want: "Timezone is successful set on 3",
+		},
+		{
+			name:   "test /set_tz success test with plus",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/set_tz +3",
+			},
+			want: "Timezone is successful set on 3",
+		},
+		{
+			name:   "test /set_tz success test with minus",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/set_tz -11",
+			},
+			want: "Timezone is successful set on -11",
 		},
 	}
 	for _, tt := range tests {
