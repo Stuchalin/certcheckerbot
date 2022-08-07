@@ -105,19 +105,19 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 		return certinfo.GetCertsInfo(attr, false)
 	case "/set_hour":
 		if attr == "" {
-			return "You must specify the reminder hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\""
+			return "You must specify the notification hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\""
 		}
 		hour, err := strconv.Atoi(attr)
 		if err != nil || hour < 0 || hour > 23 {
-			return "Reminder hour must be integer number in 0..23 range."
+			return "Notification hour must be integer number in 0..23 range."
 		}
 		user.NotificationHour = hour
 		_, err = bot.db.UpdateUserInfo(user)
 		if err != nil {
 			log.Println(err)
-			return fmt.Sprintf("Internal error: cannot set reminder hour to %s", attr)
+			return fmt.Sprintf("Internal error: cannot set notification hour to %s", attr)
 		}
-		return fmt.Sprintf("Reminder hour is successful set on %s", attr)
+		return fmt.Sprintf("Notification hour is successful set on %s", attr)
 	default:
 		return "Use /help command"
 	}

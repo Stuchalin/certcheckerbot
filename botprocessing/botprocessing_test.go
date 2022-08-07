@@ -56,7 +56,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour",
 			},
-			want: "You must specify the reminder hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\"",
+			want: "You must specify the notification hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\"",
 		},
 		{
 			name:   "test /set_hour not int hour",
@@ -65,7 +65,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour qwe",
 			},
-			want: "Reminder hour must be integer number in 0..23 range.",
+			want: "Notification hour must be integer number in 0..23 range.",
 		},
 		{
 			name:   "test /set_hour decimal hour",
@@ -74,7 +74,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour 1.1",
 			},
-			want: "Reminder hour must be integer number in 0..23 range.",
+			want: "Notification hour must be integer number in 0..23 range.",
 		},
 		{
 			name:   "test /set_hour not correct hour -2",
@@ -83,7 +83,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour -2",
 			},
-			want: "Reminder hour must be integer number in 0..23 range.",
+			want: "Notification hour must be integer number in 0..23 range.",
 		},
 		{
 			name:   "test /set_hour not correct hour 24",
@@ -92,7 +92,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour 24",
 			},
-			want: "Reminder hour must be integer number in 0..23 range.",
+			want: "Notification hour must be integer number in 0..23 range.",
 		},
 		{
 			name:   "test /set_hour success test",
@@ -101,7 +101,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    nil,
 				command: "/set_hour 23",
 			},
-			want: "Reminder hour is successful set on 23",
+			want: "Notification hour is successful set on 23",
 		},
 	}
 	for _, tt := range tests {
