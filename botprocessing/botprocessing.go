@@ -111,13 +111,23 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 		if err != nil || hour < 0 || hour > 23 {
 			return "Notification hour must be integer number in 0..23 range."
 		}
+		if user == nil {
+			log.Println("Internal error: user not identified")
+			return "Internal error: user not identified"
+		}
 		user.NotificationHour = hour
-		_, err = bot.db.UpdateUserInfo(user)
+		result, err := bot.db.UpdateUserInfo(user)
 		if err != nil {
 			log.Println(err)
 			return fmt.Sprintf("Internal error: cannot set notification hour to %s", attr)
 		}
-		return fmt.Sprintf("Notification hour is successful set on %s", attr)
+		if result {
+			return fmt.Sprintf("Notification hour is successful set on %s", attr)
+		} else {
+			log.Println("Internal error: cannot update user notification hour")
+			return "Internal error: cannot update user notification hour"
+		}
+
 	default:
 		return "Use /help command"
 	}
