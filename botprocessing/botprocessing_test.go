@@ -49,6 +49,60 @@ func TestBot_commandProcessing(t *testing.T) {
 			},
 			want: "Use /help command",
 		},
+		{
+			name:   "test /set_hour with no attrs",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour",
+			},
+			want: "You must specify the reminder hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\"",
+		},
+		{
+			name:   "test /set_hour not int hour",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour qwe",
+			},
+			want: "Reminder hour must be integer number in 0..23 range.",
+		},
+		{
+			name:   "test /set_hour decimal hour",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour 1.1",
+			},
+			want: "Reminder hour must be integer number in 0..23 range.",
+		},
+		{
+			name:   "test /set_hour not correct hour -2",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour -2",
+			},
+			want: "Reminder hour must be integer number in 0..23 range.",
+		},
+		{
+			name:   "test /set_hour not correct hour 24",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour 24",
+			},
+			want: "Reminder hour must be integer number in 0..23 range.",
+		},
+		{
+			name:   "test /set_hour success test",
+			fields: fields{},
+			args: args{
+				user:    nil,
+				command: "/set_hour 23",
+			},
+			want: "Reminder hour is successful set on 23",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
