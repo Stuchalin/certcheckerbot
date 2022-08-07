@@ -4,8 +4,10 @@ import (
 	"certcheckerbot/certinfo"
 	"certcheckerbot/storage"
 	"errors"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -101,6 +103,14 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			return "You must specify the URL. Format: \n\t /check www.checkURL1.com www.checkURL2.com ... Use space to check few URLs."
 		}
 		return certinfo.GetCertsInfo(attr, false)
+	case "/set_hour":
+		if attr == "" {
+			return "You must specify the reminder hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\""
+		}
+		if hour, err := strconv.Atoi(attr); err == nil || hour < 0 || hour > 23 {
+			return "Reminder hour must be integer number in 0..23 range."
+		}
+		return fmt.Sprintf("Reminder hour is successful set on %s", attr)
 	default:
 		return "Use /help command"
 	}
