@@ -4,8 +4,10 @@ import (
 	"certcheckerbot/certinfo"
 	"certcheckerbot/storage"
 	"errors"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -56,13 +58,13 @@ func (bot *Bot) startProcessing(errorsChan chan error) {
 			command = strings.Trim(command, " ")
 			if command[:1] == "/" {
 
-				user := storage.User{
+				user := &storage.User{
 					Name: update.Message.From.UserName,
 					TGId: update.Message.From.ID,
 				}
-				bot.addUserIfNotExists(&user)
+				user = bot.addUserIfNotExists(user)
 
-				msgText := bot.commandProcessing(command, &user)
+				msgText := bot.commandProcessing(command, user)
 
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				msg.ReplyToMessageID = update.Message.MessageID
@@ -95,40 +97,66 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 	switch cmd {
 	case "/help":
 		return "/help - print help message\n" +
-			"/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains"
+			"/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
+			"/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0."
 	case "/check":
 		if attr == "" {
 			return "You must specify the URL. Format: \n\t /check www.checkURL1.com www.checkURL2.com ... Use space to check few URLs."
 		}
 		return certinfo.GetCertsInfo(attr, false)
+	case "/set_hour":
+		if attr == "" {
+			return "You must specify the notification hour. Format: \n\t /set_hour [hour in 24 format 0..23]. For example: \"/set_hour 9\""
+		}
+		hour, err := strconv.Atoi(attr)
+		if err != nil || hour < 0 || hour > 23 {
+			return "Notification hour must be integer number in 0..23 range."
+		}
+		if user == nil {
+			log.Println("Internal error: user not identified")
+			return "Internal error: user not identified"
+		}
+		user.NotificationHour = hour
+		result, err := bot.db.UpdateUserInfo(user)
+		if err != nil {
+			log.Println(err)
+			return fmt.Sprintf("Internal error: cannot set notification hour to %s", attr)
+		}
+		if result {
+			return fmt.Sprintf("Notification hour is successful set on %s", attr)
+		} else {
+			log.Println("Internal error: cannot update user notification hour")
+			return "Internal error: cannot update user notification hour"
+		}
+
 	default:
 		return "Use /help command"
 	}
 }
 
 //addUserIfNotExists - add new user to storage
-func (bot *Bot) addUserIfNotExists(user *storage.User) {
+func (bot *Bot) addUserIfNotExists(user *storage.User) *storage.User {
 	savedUser, err := bot.db.GetUserByTGId(user.TGId)
 	if err != nil {
 		if errors.Is(err, storage.ErrorUserNotFound) {
-			_, err := bot.db.AddUser(user)
+			user.Id, err = bot.db.AddUser(user)
 			if err != nil {
 				log.Println(err)
-				return
+				return nil
 			}
-			return
+			return user
 		}
 		log.Println(err)
-		return
+		return nil
 	}
 	if user.Name != savedUser.Name {
 		savedUser.Name = user.Name
 		_, err2 := bot.db.UpdateUserInfo(savedUser)
 		if err2 != nil {
 			log.Println(err2)
-			return
+			return nil
 		}
 	}
 	user = savedUser
-	return
+	return user
 }
