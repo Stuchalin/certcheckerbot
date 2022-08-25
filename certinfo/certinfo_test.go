@@ -11,9 +11,11 @@ func TestGetCertInfo(t *testing.T) {
 		printFullChain bool
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name       string
+		args       args
+		want       string
+		wantErr    bool
+		errMessage string
 	}{
 		{
 			name: "test Not URL",
@@ -21,7 +23,8 @@ func TestGetCertInfo(t *testing.T) {
 				URL:            "NotValidURL",
 				printFullChain: false,
 			},
-			want: "Cannot check cert from URL NotValidURL\\..*",
+			wantErr:    true,
+			errMessage: "check certificate error - cannot check cert from URL NotValidURL\\..*",
 		},
 		{
 			name: "test valid google URL",
@@ -43,7 +46,19 @@ func TestGetCertInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetCertInfo(tt.args.URL, tt.args.printFullChain)
+			got, err := GetCertInfo(tt.args.URL, tt.args.printFullChain)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("GetCertInfo() - expected Error, got nil")
+				}
+				res, err2 := regexp.MatchString(tt.errMessage, err.Error())
+				if err2 != nil {
+					t.Errorf("GetCertInfo() - regex error: %s", err2)
+				}
+				if !res {
+					t.Errorf("GetCertInfo() = %v, regex pattern = %v", err, tt.errMessage)
+				}
+			}
 			res, err := regexp.MatchString(tt.want, got)
 			if err != nil {
 				t.Errorf("GetCertInfo() - regex error: %s", err)

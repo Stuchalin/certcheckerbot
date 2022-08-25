@@ -11,12 +11,16 @@ func GetCertsInfo(URLs string, printFullChain bool) string {
 	UrlArr := strings.Split(URLs, " ")
 	result := ""
 	for _, url := range UrlArr {
-		result += GetCertInfo(url, printFullChain)
+		certStr, err := GetCertInfo(url, printFullChain)
+		if err != nil {
+			result += err.Error()
+		}
+		result += certStr
 	}
 	return result
 }
 
-func GetCertInfo(URL string, printFullChain bool) string {
+func GetCertInfo(URL string, printFullChain bool) (string, error) {
 	conf := &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -24,7 +28,7 @@ func GetCertInfo(URL string, printFullChain bool) string {
 	conn, err := tls.Dial("tcp", URL+":443", conf)
 	if err != nil {
 		log.Println("Error in Dial", err)
-		return fmt.Sprintf("Cannot check cert from URL %s. Error: %e\n\n", URL, err)
+		return "", fmt.Errorf("check certificate error - cannot check cert from URL %s. Error: %e\n\n", URL, err)
 	}
 	defer conn.Close()
 	certs := conn.ConnectionState().PeerCertificates
@@ -39,5 +43,5 @@ func GetCertInfo(URL string, printFullChain bool) string {
 		result += fmt.Sprintf("Common Name: %s\n", cert.Issuer.CommonName)
 
 	}
-	return result + "\n"
+	return result + "\n", nil
 }
