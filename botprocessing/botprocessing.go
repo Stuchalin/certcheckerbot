@@ -168,14 +168,17 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 
 		_, err := certinfo.GetCertInfo(attr, false)
 		if err != nil {
-			return fmt.Sprintf("Fail add domain for shedule checks. \nCannot check certificate for this domain. Error: %v", err)
+			return fmt.Sprintf("Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: %v", err)
 		}
 
 		newUserDomain := storage.UserDomain{UserId: user.Id, Domain: attr}
 
 		result, err := bot.db.AddUserDomain(&newUserDomain)
 		if err != nil {
-			return fmt.Sprintf("Internal error: Fail to add domain %v.", err)
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				return fmt.Sprintf("Fail add domain - %s. This domain already added to account. Check added domains with command /domains", attr)
+			}
+			return fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err)
 		}
 		if !result {
 			return fmt.Sprintf("Internal error: Fail to add domain.")
