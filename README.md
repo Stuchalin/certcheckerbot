@@ -23,3 +23,7 @@ DEBUG=true/false (enable or disable debug. default - false)
 **/add_domain [domain_name]** - add domain for schedule checks. For example: "/add_domain google.com"
 
 **/remove_domain [domain_name]** - removes domain for schedule checks. For example: "/remove_domain google.com"
+
+## v0.2
+* Work all base commands
+* Scheduler not worked yet
