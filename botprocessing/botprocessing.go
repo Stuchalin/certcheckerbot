@@ -103,7 +103,8 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.\n" +
 			"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.\n" +
 			"\t/domains - get added domains" +
-			"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\""
+			"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\"\n" +
+			"\t/remove_domain [domain_name] - removes domain for schedule checks. For example: \"/remove_domain google.com\"\n"
 	case "/check":
 		if attr == "" {
 			return "You must specify the URL. Format: \n\t /check www.checkURL1.com www.checkURL2.com ... Use space to check few URLs."
@@ -180,13 +181,13 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 				return fmt.Sprintf("Fail add domain - %s. This domain already added to account. Check added domains with command /domains", attr)
 			}
+			log.Println(fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err))
 			return fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err)
 		}
 		if !result {
+			log.Println("Internal error: Fail to add domain.")
 			return fmt.Sprintf("Internal error: Fail to add domain.")
 		}
-
-		user.UserDomains = append(user.UserDomains, newUserDomain)
 
 		return "Domain successfully added."
 
@@ -196,6 +197,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			if err == storage.ErrorUserDomainNotFound {
 				return fmt.Sprintf("You have no added domains.")
 			}
+			log.Println(fmt.Sprintf("Internal error: cannot get user domains. Error: %v", err))
 			return fmt.Sprintf("Internal error: cannot get user domains. Error: %v", err)
 		}
 
@@ -206,6 +208,28 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 		}
 
 		return domainsResult
+
+	case "/remove_domain":
+		if attr == "" {
+			return "You must specify domain name. Format: \n\t /remove_domain [domain_name]. For example: \"/remove_domain google.com\""
+		}
+
+		if strings.Contains(attr, " ") {
+			return "You cannot remove multiple domains at once. Please specify only one domain."
+		}
+
+		newUserDomain := storage.UserDomain{UserId: user.Id, Domain: attr}
+
+		result, err := bot.db.RemoveUserDomain(&newUserDomain)
+		if err != nil {
+			log.Println(fmt.Sprintf("Internal error: Fail to remove domain. Error: %v.", err))
+			return fmt.Sprintf("Internal error: Fail to remove domain. Error: %v.", err)
+		}
+		if !result {
+			return fmt.Sprintf("Fail to remove domain, this domain does not added for you. To check added domains use /domains command.")
+		}
+
+		return "Domain successfully removed."
 
 	default:
 		return "Use /help command"
