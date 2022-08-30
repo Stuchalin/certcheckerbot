@@ -39,28 +39,42 @@ func TestBot_commandProcessing(t *testing.T) {
 	_, _ = db.AddUser(&user)
 	_, _ = db.AddUserDomain(&domain)
 
-	user2 := storage.User{
+	userForSelectNoDomains := storage.User{
 		Id:               2,
 		Name:             "test user 2",
 		TGId:             12345,
 		NotificationHour: 0,
 		UTC:              0,
 	}
-	_, _ = db.AddUser(&user2)
+	_, _ = db.AddUser(&userForSelectNoDomains)
 
-	user3 := storage.User{
+	userForSelectExistDomain := storage.User{
 		Id:               3,
 		Name:             "test user 3",
 		TGId:             1234567,
 		NotificationHour: 0,
 		UTC:              0,
 	}
-	domain3 := storage.UserDomain{
+	domainForSelectExistDomain := storage.UserDomain{
 		UserId: 3,
 		Domain: "google.com",
 	}
-	_, _ = db.AddUser(&user3)
-	_, _ = db.AddUserDomain(&domain3)
+	_, _ = db.AddUser(&userForSelectExistDomain)
+	_, _ = db.AddUserDomain(&domainForSelectExistDomain)
+
+	userForRemoveDomain := storage.User{
+		Id:               4,
+		Name:             "test user 4",
+		TGId:             12345678,
+		NotificationHour: 0,
+		UTC:              0,
+	}
+	domainForRemoveDomain := storage.UserDomain{
+		UserId: 4,
+		Domain: "google.com",
+	}
+	_, _ = db.AddUser(&userForRemoveDomain)
+	_, _ = db.AddUserDomain(&domainForRemoveDomain)
 
 	type fields struct {
 		BotAPI *tgbotapi.BotAPI
@@ -339,7 +353,7 @@ func TestBot_commandProcessing(t *testing.T) {
 			name:   "test /domains no domains",
 			fields: fields{db: db},
 			args: args{
-				user:    &user2,
+				user:    &userForSelectNoDomains,
 				command: "/domains",
 			},
 			want: "You have no added domains.",
@@ -348,10 +362,47 @@ func TestBot_commandProcessing(t *testing.T) {
 			name:   "test /domains success get domains",
 			fields: fields{db: db},
 			args: args{
-				user:    &user3,
+				user:    &userForSelectExistDomain,
 				command: "/domains",
 			},
 			want: "Added domains:\n\tgoogle.com\n",
+		},
+		{
+			name:   "test /remove_domain with no attrs",
+			fields: fields{db: db},
+			args: args{
+				user:    &userForRemoveDomain,
+				command: "/remove_domain ",
+			},
+			want: "You must specify domain name. Format: \n\t /remove_domain [domain_name]. For example: \"/remove_domain google.com\"",
+		},
+		{
+			name:   "test /remove_domain cannot add multiply domains error",
+			fields: fields{db: db},
+			args: args{
+				user:    &userForRemoveDomain,
+				command: "/remove_domain google.com twitch.com",
+			},
+			want: "You cannot remove multiple domains at once. Please specify only one domain.",
+		},
+		{
+			name:   "test /remove_domain this domain does not added for you",
+			fields: fields{db: db},
+			args: args{
+				user:    &userForRemoveDomain,
+				command: "/remove_domain twitch.com",
+			},
+			want: "Fail to remove domain, this domain does not added for you. To check added domains use /domains command.",
+		},
+
+		{
+			name:   "test /remove_domain success remove domain",
+			fields: fields{db: db},
+			args: args{
+				user:    &userForRemoveDomain,
+				command: "/remove_domain google.com",
+			},
+			want: "Domain successfully removed.",
 		},
 	}
 	for _, tt := range tests {

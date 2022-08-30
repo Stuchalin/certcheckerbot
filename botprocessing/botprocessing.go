@@ -186,8 +186,6 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			return fmt.Sprintf("Internal error: Fail to add domain.")
 		}
 
-		user.UserDomains = append(user.UserDomains, newUserDomain)
-
 		return "Domain successfully added."
 
 	case "/domains":
@@ -206,6 +204,27 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 		}
 
 		return domainsResult
+
+	case "/remove_domain":
+		if attr == "" {
+			return "You must specify domain name. Format: \n\t /remove_domain [domain_name]. For example: \"/remove_domain google.com\""
+		}
+
+		if strings.Contains(attr, " ") {
+			return "You cannot remove multiple domains at once. Please specify only one domain."
+		}
+
+		newUserDomain := storage.UserDomain{UserId: user.Id, Domain: attr}
+
+		result, err := bot.db.RemoveUserDomain(&newUserDomain)
+		if err != nil {
+			return fmt.Sprintf("Internal error: Fail to remove domain. Error: %v.", err)
+		}
+		if !result {
+			return fmt.Sprintf("Fail to remove domain, this domain does not added for you. To check added domains use /domains command.")
+		}
+
+		return "Domain successfully removed."
 
 	default:
 		return "Use /help command"
