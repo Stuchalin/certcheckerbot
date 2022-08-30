@@ -263,6 +263,51 @@ func TestBot_commandProcessing(t *testing.T) {
 			},
 			want: "Timezone is successful set on -11",
 		},
+		{
+			name:   "test /add_domain with no attrs",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain ",
+			},
+			want: "You must specify domain name. Format: \n\t /add_domain [domain_name]. For example: \"/add_domain google.com\"",
+		},
+		{
+			name:   "test /add_domain cannot add multiply domains error",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain google.com twitch.com",
+			},
+			want: "You cannot add multiple domains at once. Please specify only one domain.",
+		},
+		{
+			name:   "test /add_domain no such host error",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain www",
+			},
+			want: "Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: check certificate error - cannot check cert from URL www. Error: &{%!e(string=dial) %!e(string=tcp) <nil> <nil> %!e(*net.DNSError=&{no such host www  false false true})}\n\n",
+		},
+		{
+			name:   "test /add_domain domain already added",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain google.com",
+			},
+			want: "Fail add domain - google.com. This domain already added to account. Check added domains with command /domains",
+		},
+		{
+			name:   "test /add_domain success add domain",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain ya.ru",
+			},
+			want: "Domain successfully added.",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
