@@ -39,6 +39,29 @@ func TestBot_commandProcessing(t *testing.T) {
 	_, _ = db.AddUser(&user)
 	_, _ = db.AddUserDomain(&domain)
 
+	user2 := storage.User{
+		Id:               2,
+		Name:             "test user 2",
+		TGId:             12345,
+		NotificationHour: 0,
+		UTC:              0,
+	}
+	_, _ = db.AddUser(&user2)
+
+	user3 := storage.User{
+		Id:               3,
+		Name:             "test user 3",
+		TGId:             1234567,
+		NotificationHour: 0,
+		UTC:              0,
+	}
+	domain3 := storage.UserDomain{
+		UserId: 3,
+		Domain: "google.com",
+	}
+	_, _ = db.AddUser(&user3)
+	_, _ = db.AddUserDomain(&domain3)
+
 	type fields struct {
 		BotAPI *tgbotapi.BotAPI
 		db     storage.UsersConfig
@@ -68,6 +91,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				"\t/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
 				"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.\n" +
 				"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.\n" +
+				"\t/domains - get added domains" +
 				"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\"",
 		},
 		//empty command
@@ -310,6 +334,24 @@ func TestBot_commandProcessing(t *testing.T) {
 				command: "/add_domain ya.ru",
 			},
 			want: "Domain successfully added.",
+		},
+		{
+			name:   "test /domains no domains",
+			fields: fields{db: db},
+			args: args{
+				user:    &user2,
+				command: "/domains",
+			},
+			want: "You have no added domains.",
+		},
+		{
+			name:   "test /domains success get domains",
+			fields: fields{db: db},
+			args: args{
+				user:    &user3,
+				command: "/domains",
+			},
+			want: "Added domains:\n\tgoogle.com\n",
 		},
 	}
 	for _, tt := range tests {
