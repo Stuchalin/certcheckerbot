@@ -31,7 +31,12 @@ func TestBot_commandProcessing(t *testing.T) {
 		NotificationHour: 0,
 		UTC:              0,
 	}
+	domain := storage.UserDomain{
+		UserId: 1,
+		Domain: "google.com",
+	}
 	_, _ = db.AddUser(&user)
+	_, _ = db.AddUserDomain(&domain)
 
 	type fields struct {
 		BotAPI *tgbotapi.BotAPI

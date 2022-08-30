@@ -157,6 +157,34 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			return "Internal error: cannot update timezone"
 		}
 
+	case "/add_domain":
+		if attr == "" {
+			return "You must specify domain name. Format: \n\t /add_domain [domain_name]. For example: \"/add_domain google.com\""
+		}
+
+		if strings.Contains(attr, " ") {
+			return "You cannot add multiple domains at once. Please specify only one domain."
+		}
+
+		_, err := certinfo.GetCertInfo(attr, false)
+		if err != nil {
+			return fmt.Sprintf("Fail add domain for shedule checks. \nCannot check certificate for this domain. Error: %v", err)
+		}
+
+		newUserDomain := storage.UserDomain{UserId: user.Id, Domain: attr}
+
+		result, err := bot.db.AddUserDomain(&newUserDomain)
+		if err != nil {
+			return fmt.Sprintf("Internal error: Fail to add domain %v.", err)
+		}
+		if !result {
+			return fmt.Sprintf("Internal error: Fail to add domain.")
+		}
+
+		user.UserDomains = append(user.UserDomains, newUserDomain)
+
+		return "Domain successfully added."
+
 	default:
 		return "Use /help command"
 	}
