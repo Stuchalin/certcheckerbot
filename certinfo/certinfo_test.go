@@ -105,7 +105,7 @@ func TestGetCertsInfo(t *testing.T) {
 				printFullChain: false,
 			},
 			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
-				"Cannot check cert from URL notValidDomain\\..*\n\n" +
+				"check certificate error - cannot check cert from URL notValidDomain\\..*\n\n" +
 				"DNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
 		},
 	}
