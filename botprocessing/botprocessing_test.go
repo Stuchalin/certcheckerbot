@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"os"
+	"regexp"
 	"testing"
 )
 
@@ -31,7 +32,12 @@ func TestBot_commandProcessing(t *testing.T) {
 		NotificationHour: 0,
 		UTC:              0,
 	}
+	domain := storage.UserDomain{
+		UserId: 1,
+		Domain: "google.com",
+	}
 	_, _ = db.AddUser(&user)
+	_, _ = db.AddUserDomain(&domain)
 
 	type fields struct {
 		BotAPI *tgbotapi.BotAPI
@@ -42,10 +48,11 @@ func TestBot_commandProcessing(t *testing.T) {
 		user    *storage.User
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
+		name      string
+		fields    fields
+		args      args
+		want      string
+		wantRegex string
 	}{
 		//help command
 		{
@@ -60,7 +67,8 @@ func TestBot_commandProcessing(t *testing.T) {
 				"\t/help - print help message\n" +
 				"\t/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
 				"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.\n" +
-				"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.",
+				"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.\n" +
+				"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\"",
 		},
 		//empty command
 		{
@@ -258,6 +266,51 @@ func TestBot_commandProcessing(t *testing.T) {
 			},
 			want: "Timezone is successful set on -11",
 		},
+		{
+			name:   "test /add_domain with no attrs",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain ",
+			},
+			want: "You must specify domain name. Format: \n\t /add_domain [domain_name]. For example: \"/add_domain google.com\"",
+		},
+		{
+			name:   "test /add_domain cannot add multiply domains error",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain google.com twitch.com",
+			},
+			want: "You cannot add multiple domains at once. Please specify only one domain.",
+		},
+		{
+			name:   "test /add_domain no such host error",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain www",
+			},
+			wantRegex: "Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: check certificate error - cannot check cert from URL www. Error: .*no such host www.*",
+		},
+		{
+			name:   "test /add_domain domain already added",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain google.com",
+			},
+			want: "Fail add domain - google.com. This domain already added to account. Check added domains with command /domains",
+		},
+		{
+			name:   "test /add_domain success add domain",
+			fields: fields{db: db},
+			args: args{
+				user:    &user,
+				command: "/add_domain ya.ru",
+			},
+			want: "Domain successfully added.",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -265,7 +318,16 @@ func TestBot_commandProcessing(t *testing.T) {
 				BotAPI: tt.fields.BotAPI,
 				db:     tt.fields.db,
 			}
-			if got := bot.commandProcessing(tt.args.command, tt.args.user); got != tt.want {
+			if tt.wantRegex != "" {
+				got := bot.commandProcessing(tt.args.command, tt.args.user)
+				res, err := regexp.MatchString(tt.wantRegex, got)
+				if err != nil {
+					t.Errorf("commandProcessing() - regex error: %s", err)
+				}
+				if !res {
+					t.Errorf("commandProcessing() = %v, regex pattern = %v", got, tt.wantRegex)
+				}
+			} else if got := bot.commandProcessing(tt.args.command, tt.args.user); got != tt.want {
 				t.Errorf("commandProcessing() = %v, want %v", got, tt.want)
 			}
 		})

@@ -101,7 +101,8 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			"\t/help - print help message\n" +
 			"\t/check www.checkURL1.com www.checkURL2.com ... - check certificate on URL. Use spaces to check few domains\n" +
 			"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.\n" +
-			"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0."
+			"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.\n" +
+			"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\""
 	case "/check":
 		if attr == "" {
 			return "You must specify the URL. Format: \n\t /check www.checkURL1.com www.checkURL2.com ... Use space to check few URLs."
@@ -156,6 +157,37 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			log.Println("Internal error: cannot update timezone")
 			return "Internal error: cannot update timezone"
 		}
+
+	case "/add_domain":
+		if attr == "" {
+			return "You must specify domain name. Format: \n\t /add_domain [domain_name]. For example: \"/add_domain google.com\""
+		}
+
+		if strings.Contains(attr, " ") {
+			return "You cannot add multiple domains at once. Please specify only one domain."
+		}
+
+		_, err := certinfo.GetCertInfo(attr, false)
+		if err != nil {
+			return fmt.Sprintf("Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: %v", err)
+		}
+
+		newUserDomain := storage.UserDomain{UserId: user.Id, Domain: attr}
+
+		result, err := bot.db.AddUserDomain(&newUserDomain)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				return fmt.Sprintf("Fail add domain - %s. This domain already added to account. Check added domains with command /domains", attr)
+			}
+			return fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err)
+		}
+		if !result {
+			return fmt.Sprintf("Internal error: Fail to add domain.")
+		}
+
+		user.UserDomains = append(user.UserDomains, newUserDomain)
+
+		return "Domain successfully added."
 
 	default:
 		return "Use /help command"
