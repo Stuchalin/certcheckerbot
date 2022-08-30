@@ -180,9 +180,11 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 				return fmt.Sprintf("Fail add domain - %s. This domain already added to account. Check added domains with command /domains", attr)
 			}
+			log.Println(fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err))
 			return fmt.Sprintf("Internal error: Fail to add domain. Error: %v.", err)
 		}
 		if !result {
+			log.Println("Internal error: Fail to add domain.")
 			return fmt.Sprintf("Internal error: Fail to add domain.")
 		}
 
@@ -194,6 +196,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			if err == storage.ErrorUserDomainNotFound {
 				return fmt.Sprintf("You have no added domains.")
 			}
+			log.Println(fmt.Sprintf("Internal error: cannot get user domains. Error: %v", err))
 			return fmt.Sprintf("Internal error: cannot get user domains. Error: %v", err)
 		}
 
@@ -218,6 +221,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 
 		result, err := bot.db.RemoveUserDomain(&newUserDomain)
 		if err != nil {
+			log.Println(fmt.Sprintf("Internal error: Fail to remove domain. Error: %v.", err))
 			return fmt.Sprintf("Internal error: Fail to remove domain. Error: %v.", err)
 		}
 		if !result {
