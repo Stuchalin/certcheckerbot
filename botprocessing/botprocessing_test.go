@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 	"os"
+	"regexp"
 	"testing"
 )
 
@@ -47,10 +48,11 @@ func TestBot_commandProcessing(t *testing.T) {
 		user    *storage.User
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
+		name      string
+		fields    fields
+		args      args
+		want      string
+		wantRegex string
 	}{
 		//help command
 		{
@@ -289,7 +291,7 @@ func TestBot_commandProcessing(t *testing.T) {
 				user:    &user,
 				command: "/add_domain www",
 			},
-			want: "Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: check certificate error - cannot check cert from URL www. Error: &{%!e(string=dial) %!e(string=tcp) <nil> <nil> %!e(*net.DNSError=&{no such host www  false false true})}\n\n",
+			wantRegex: "Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: check certificate error - cannot check cert from URL www. Error: .*no such host www.*",
 		},
 		{
 			name:   "test /add_domain domain already added",
@@ -316,7 +318,16 @@ func TestBot_commandProcessing(t *testing.T) {
 				BotAPI: tt.fields.BotAPI,
 				db:     tt.fields.db,
 			}
-			if got := bot.commandProcessing(tt.args.command, tt.args.user); got != tt.want {
+			if tt.wantRegex != "" {
+				got := bot.commandProcessing(tt.args.command, tt.args.user)
+				res, err := regexp.MatchString(tt.wantRegex, got)
+				if err != nil {
+					t.Errorf("commandProcessing() - regex error: %s", err)
+				}
+				if !res {
+					t.Errorf("commandProcessing() = %v, regex pattern = %v", got, tt.wantRegex)
+				}
+			} else if got := bot.commandProcessing(tt.args.command, tt.args.user); got != tt.want {
 				t.Errorf("commandProcessing() = %v, want %v", got, tt.want)
 			}
 		})
