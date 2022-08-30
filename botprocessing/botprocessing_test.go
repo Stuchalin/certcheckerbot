@@ -106,7 +106,8 @@ func TestBot_commandProcessing(t *testing.T) {
 				"\t/set_hour [hour in 24 format 0..23] - set a notification hour for messages about expired domains. For example: \"/set_hour 9\". Notification hour for default - 0.\n" +
 				"\t/set_tz [-11..14] - set a timezone for messages about expired domains. For example: \\\"/set_tz 3\\\". Timezone for default - 0.\n" +
 				"\t/domains - get added domains" +
-				"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\"",
+				"\t/add_domain [domain_name] - add domain for schedule checks. For example: \"/add_domain google.com\"\n" +
+				"\t/remove_domain [domain_name] - removes domain for schedule checks. For example: \"/remove_domain google.com\"\n",
 		},
 		//empty command
 		{
