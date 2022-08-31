@@ -4,6 +4,7 @@ import "errors"
 
 var ErrorUserNotFound = errors.New("storage error - user not found")
 var ErrorUserDomainNotFound = errors.New("storage error - user domain not found")
+var ErrorUsersSchedulesNotFound = errors.New("storage error - users schedules not found")
 
 type UsersConfig interface {
 	AddUser(user *User) (int, error)
@@ -16,4 +17,6 @@ type UsersConfig interface {
 	AddUserDomain(domain *UserDomain) (bool, error)
 	RemoveUserDomain(domain *UserDomain) (bool, error)
 	GetUserDomains(user *User) (*[]UserDomain, error)
+
+	GetUsersSchedules() (*[]UserSchedule, error)
 }

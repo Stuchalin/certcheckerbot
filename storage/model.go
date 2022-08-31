@@ -13,3 +13,9 @@ type UserDomain struct {
 	UserId int
 	Domain string
 }
+
+type UserSchedule struct {
+	UserId           int
+	NotificationHour int
+	UTC              int
+}

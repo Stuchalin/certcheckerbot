@@ -694,3 +694,94 @@ func TestSqlite3Controller_UpdateUserInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestSqlite3Controller_GetUsersSchedules(t *testing.T) {
+	dbName := getTempDBName()
+	defer removeDbFile(dbName)
+
+	tests := []struct {
+		name    string
+		want    *[]storage.UserSchedule
+		wantErr bool
+	}{
+		{
+			name:    "test GetUsersSchedules error no schedules",
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, _ := NewController(dbName)
+			defer db.Dispose()
+
+			got, err := db.GetUsersSchedules()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUsersSchedules() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUsersSchedules() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSqlite3Controller_GetUsersSchedules1(t *testing.T) {
+
+	dbName := getTempDBName()
+	defer removeDbFile(dbName)
+
+	db, _ := NewController(dbName)
+	defer db.Dispose()
+
+	_, _ = db.AddUser(&storage.User{
+		Id:               1,
+		TGId:             1,
+		UTC:              0,
+		Name:             "test user",
+		NotificationHour: 0,
+	})
+	_, _ = db.AddUser(&storage.User{
+		Id:               2,
+		TGId:             2,
+		UTC:              1,
+		Name:             "test user",
+		NotificationHour: 1,
+	})
+
+	tests := []struct {
+		name    string
+		want    *[]storage.UserSchedule
+		wantErr bool
+	}{
+		{
+			name: "test GetUsersSchedules success get schedules",
+			want: &[]storage.UserSchedule{
+				{
+					UserId:           1,
+					UTC:              0,
+					NotificationHour: 0,
+				},
+				{
+					UserId:           2,
+					UTC:              1,
+					NotificationHour: 1,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := db.GetUsersSchedules()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUsersSchedules() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUsersSchedules() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -342,6 +342,32 @@ func (db *Sqlite3Controller) GetUserDomains(user *storage.User) (*[]storage.User
 	return nil, storage.ErrorUserDomainNotFound
 }
 
+func (db *Sqlite3Controller) GetUsersSchedules() (*[]storage.UserSchedule, error) {
+	record, err := db.Connection.Query("select Id, NotificationHour, UTC from Users;")
+	if err != nil {
+		return nil, err
+	}
+	defer func(record *sql.Rows) {
+		_ = record.Close()
+	}(record)
+
+	var usersSchedules []storage.UserSchedule
+
+	for record.Next() {
+		var userSchedule storage.UserSchedule
+		err := record.Scan(&userSchedule.UserId, &userSchedule.NotificationHour, &userSchedule.UTC)
+		if err != nil {
+			return nil, err
+		}
+		usersSchedules = append(usersSchedules, userSchedule)
+	}
+	if usersSchedules != nil {
+		return &usersSchedules, nil
+	}
+
+	return nil, storage.ErrorUsersSchedulesNotFound
+}
+
 //Dispose - close connections to database
 func (db *Sqlite3Controller) Dispose() {
 	CloseConnection(db.Connection)
