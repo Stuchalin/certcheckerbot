@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -28,6 +29,8 @@ func main() {
 
 	errorsBot := myBot.StartProcessing()
 
+	go initScheduler()
+
 	for {
 		select {
 		case err := <-errorsBot:
@@ -35,4 +38,18 @@ func main() {
 		}
 	}
 
+}
+
+//Initialize the scheduler for every hour on the border of the next hour
+func initScheduler() {
+	now := time.Now()
+	duration := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()+1, 0, 0, 0, now.Location()).Sub(now)
+	log.Printf("Init scheduler after %v", duration)
+	select {
+	case <-time.After(duration):
+		log.Println("Scheduler initialised!")
+		for tick := range time.Tick(time.Hour) {
+			log.Println(tick)
+		}
+	}
 }
