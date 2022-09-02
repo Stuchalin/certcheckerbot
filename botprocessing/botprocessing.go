@@ -34,11 +34,12 @@ func NewBot(botKey string, db storage.UsersConfig, debug bool) (*Bot, error) {
 	return &bot, nil
 }
 
-func (bot *Bot) StartProcessing() chan error {
+func (bot *Bot) StartProcessing(usersDomainsChan chan *storage.User) chan error {
 
 	errorsChan := make(chan error, 10)
 
 	go bot.startProcessing(errorsChan)
+	go bot.scheduleDomainsCheck(usersDomainsChan, errorsChan)
 
 	return errorsChan
 }
@@ -261,4 +262,22 @@ func (bot *Bot) addUserIfNotExists(user *storage.User) *storage.User {
 	}
 	user = savedUser
 	return user
+}
+
+func (bot *Bot) scheduleDomainsCheck(usersDomainsChan chan *storage.User, errorsChan chan error) {
+	for {
+		select {
+		case user := <-usersDomainsChan:
+			//println("send message to " + user.Name)
+			for _, userDomain := range user.UserDomains {
+				msg := tgbotapi.NewMessage(user.TGId, certinfo.GetCertsInfo(userDomain.Domain, false))
+
+				_, err := bot.BotAPI.Send(msg)
+				if err != nil {
+					log.Println("Error in Dial", err)
+					errorsChan <- err
+				}
+			}
+		}
+	}
 }
