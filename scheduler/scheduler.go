@@ -16,7 +16,7 @@ func InitScheduler(db storage.UsersConfig, usersDomainsChan chan *storage.User) 
 	case <-time.After(duration):
 		log.Println("Scheduler initialised!")
 		startHourlyCheck(db, usersDomainsChan)
-		for tick := range time.Tick(time.Second) {
+		for tick := range time.Tick(time.Hour) {
 			log.Println("New scheduler tick " + tick.String())
 			startHourlyCheck(db, usersDomainsChan)
 		}
@@ -35,10 +35,8 @@ func startHourlyCheck(db storage.UsersConfig, usersDomainsChan chan *storage.Use
 	if checkedUsersDomains != nil {
 		for _, user := range *checkedUsersDomains {
 			if user.UserDomains != nil {
-				for _, userDomain := range user.UserDomains {
-					log.Println("Check domains " + userDomain.Domain + " for user " + user.Name)
-					usersDomainsChan <- &user
-				}
+				log.Println("Check domains for user " + user.Name)
+				usersDomainsChan <- &user
 			}
 		}
 	}
