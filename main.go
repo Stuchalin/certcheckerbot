@@ -2,6 +2,8 @@ package main
 
 import (
 	"certcheckerbot/botprocessing"
+	"certcheckerbot/scheduler"
+	"certcheckerbot/storage"
 	"certcheckerbot/storage/sqlite3"
 	"log"
 	"os"
@@ -26,7 +28,10 @@ func main() {
 		log.Panic(err)
 	}
 
-	errorsBot := myBot.StartProcessing()
+	usersDomainsChan := make(chan *storage.User, 100)
+	errorsBot := myBot.StartProcessing(usersDomainsChan)
+
+	go scheduler.InitScheduler(db, usersDomainsChan)
 
 	for {
 		select {
