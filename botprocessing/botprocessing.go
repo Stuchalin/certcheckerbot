@@ -170,7 +170,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			return "You cannot add multiple domains at once. Please specify only one domain."
 		}
 
-		_, err := certinfo.GetCertInfo(attr, false)
+		_, _, err := certinfo.GetCertInfo(attr, false)
 		if err != nil {
 			return fmt.Sprintf("Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: %v", err)
 		}

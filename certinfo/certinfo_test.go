@@ -16,6 +16,7 @@ func TestGetCertInfo(t *testing.T) {
 		want       string
 		wantErr    bool
 		errMessage string
+		certsCount int
 	}{
 		{
 			name: "test Not URL",
@@ -25,6 +26,7 @@ func TestGetCertInfo(t *testing.T) {
 			},
 			wantErr:    true,
 			errMessage: "check certificate error - cannot check cert from URL NotValidURL\\..*",
+			certsCount: 0,
 		},
 		{
 			name: "test valid google URL",
@@ -32,7 +34,8 @@ func TestGetCertInfo(t *testing.T) {
 				URL:            "google.com",
 				printFullChain: false,
 			},
-			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+			want:       "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+			certsCount: 1,
 		},
 		{
 			name: "test valid google URL full chain",
@@ -42,11 +45,12 @@ func TestGetCertInfo(t *testing.T) {
 			},
 			want: "DNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: (.|\n)*" +
 				"DNSNames: \\[\\]\nIssuer Name: .*OU=Root CA.*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*Root.*\n\n",
+			certsCount: 3,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCertInfo(tt.args.URL, tt.args.printFullChain)
+			got, gotCerts, err := GetCertInfo(tt.args.URL, tt.args.printFullChain)
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("GetCertInfo() - expected Error, got nil")
@@ -58,6 +62,9 @@ func TestGetCertInfo(t *testing.T) {
 				if !res {
 					t.Errorf("GetCertInfo() = %v, regex pattern = %v", err, tt.errMessage)
 				}
+			}
+			if len(gotCerts) != tt.certsCount {
+				t.Errorf("GetCertInfo() incorrect certs count in array got %d, want %d", len(gotCerts), tt.certsCount)
 			}
 			res, err := regexp.MatchString(tt.want, got)
 			if err != nil {
