@@ -9,6 +9,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Bot struct {
@@ -270,12 +271,20 @@ func (bot *Bot) scheduleDomainsCheck(usersDomainsChan chan *storage.User, errors
 		case user := <-usersDomainsChan:
 			//println("send message to " + user.Name)
 			for _, userDomain := range user.UserDomains {
-				msg := tgbotapi.NewMessage(user.TGId, certinfo.GetCertsInfo(userDomain.Domain, false))
+				info, certs, err2 := certinfo.GetCertInfo(userDomain.Domain, false)
+				if err2 != nil {
+					return
+				}
+				for _, cert := range certs {
+					if time.Now().Sub(cert.NotAfter)/24 < 30 {
+						msg := tgbotapi.NewMessage(user.TGId, info)
 
-				_, err := bot.BotAPI.Send(msg)
-				if err != nil {
-					log.Println("Error in Dial", err)
-					errorsChan <- err
+						_, err := bot.BotAPI.Send(msg)
+						if err != nil {
+							log.Println("Error in Dial", err)
+							errorsChan <- err
+						}
+					}
 				}
 			}
 		}
