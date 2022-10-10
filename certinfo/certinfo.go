@@ -40,6 +40,7 @@ func GetCertInfo(URL string, printFullChain bool) (string, []*x509.Certificate, 
 			continue
 		}
 		certsResult = append(certsResult, cert)
+		result += fmt.Sprintf("Check certificate for domain: %s\n", URL)
 		result += fmt.Sprintf("DNSNames: %s\n", cert.DNSNames)
 		result += fmt.Sprintf("Issuer Name: %s\n", cert.Issuer)
 		result += fmt.Sprintf("Expiry: %s\n", cert.NotAfter.Format("2006-01-02"))
