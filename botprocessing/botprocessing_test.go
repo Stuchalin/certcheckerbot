@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"testing"
+	"time"
 )
 
 func getTempDBName() string {
@@ -423,6 +424,50 @@ func TestBot_commandProcessing(t *testing.T) {
 				}
 			} else if got := bot.commandProcessing(tt.args.command, tt.args.user); got != tt.want {
 				t.Errorf("commandProcessing() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getTimesDeltaInDays(t *testing.T) {
+	type args struct {
+		startTime time.Time
+		endTime   time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "time delta test october",
+			args: args{
+				startTime: time.Date(2022, 11, 1, 0, 0, 0, 0, time.UTC),
+				endTime:   time.Date(2022, 10, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: 31,
+		},
+		{
+			name: "time delta test november",
+			args: args{
+				startTime: time.Date(2022, 12, 1, 0, 0, 0, 0, time.UTC),
+				endTime:   time.Date(2022, 11, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: 30,
+		},
+		{
+			name: "time delta test october minus",
+			args: args{
+				startTime: time.Date(2022, 10, 1, 0, 0, 0, 0, time.UTC),
+				endTime:   time.Date(2022, 11, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: -31,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getTimesDeltaInDays(tt.args.startTime, tt.args.endTime); got != tt.want {
+				t.Errorf("getTimesDeltaInDays() = %v, want %v", got, tt.want)
 			}
 		})
 	}
