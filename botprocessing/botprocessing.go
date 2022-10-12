@@ -282,9 +282,9 @@ func (bot *Bot) scheduleDomainsCheck(usersDomainsChan chan *storage.User, errors
 					certLifeDays := getTimesDeltaInDays(cert.NotAfter, time.Now())
 
 					if certLifeDays < 0 {
-						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("Certificate expired for domain %s", userDomain.Domain))
+						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("❌ Certificate expired for domain %s", userDomain.Domain))
 					} else if intInSlice(certLifeDays, notifyDays) {
-						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("%d days to expired certificate. \n%s", certLifeDays, info))
+						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("🔥 %d days to expired certificate. \n%s", certLifeDays, info))
 					}
 
 					if msg != nil {

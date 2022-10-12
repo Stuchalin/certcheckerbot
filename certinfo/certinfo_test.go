@@ -101,9 +101,9 @@ func TestGetCertsInfo(t *testing.T) {
 				URLs:           "google.com github.com wikipedia.com",
 				printFullChain: false,
 			},
-			want: "Check certificate for domain: .*\nDNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
-				"Check certificate for domain: .*\nDNSNames: .*github\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
-				"Check certificate for domain: .*\nDNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+			want: "✅ Check certificate for domain: .*\nDNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+				"✅ Check certificate for domain: .*\nDNSNames: .*github\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+				"✅ Check certificate for domain: .*\nDNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
 		},
 		{
 			name: "test valid and fail URLs",
@@ -111,9 +111,9 @@ func TestGetCertsInfo(t *testing.T) {
 				URLs:           "google.com notValidDomain wikipedia.com",
 				printFullChain: false,
 			},
-			want: "Check certificate for domain: .*\nDNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
+			want: "✅ Check certificate for domain: .*\nDNSNames: .*google\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n" +
 				"check certificate error - cannot check cert from URL notValidDomain\\..*\n\n" +
-				"Check certificate for domain: .*\nDNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
+				"✅ Check certificate for domain: .*\nDNSNames: .*wikipedia\\.com.*\nIssuer Name: .*\nExpiry: \\d\\d\\d\\d-\\d\\d-\\d\\d\nCommon Name: .*\n\n",
 		},
 	}
 	for _, tt := range tests {
