@@ -9,6 +9,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Bot struct {
@@ -34,12 +35,12 @@ func NewBot(botKey string, db storage.UsersConfig, debug bool) (*Bot, error) {
 	return &bot, nil
 }
 
-func (bot *Bot) StartProcessing(usersDomainsChan chan *storage.User) chan error {
+func (bot *Bot) StartProcessing(usersDomainsChan chan *storage.User, notifyDays []int) chan error {
 
 	errorsChan := make(chan error, 10)
 
 	go bot.startProcessing(errorsChan)
-	go bot.scheduleDomainsCheck(usersDomainsChan, errorsChan)
+	go bot.scheduleDomainsCheck(usersDomainsChan, errorsChan, notifyDays)
 
 	return errorsChan
 }
@@ -170,7 +171,7 @@ func (bot *Bot) commandProcessing(command string, user *storage.User) string {
 			return "You cannot add multiple domains at once. Please specify only one domain."
 		}
 
-		_, err := certinfo.GetCertInfo(attr, false)
+		_, _, err := certinfo.GetCertInfo(attr, false)
 		if err != nil {
 			return fmt.Sprintf("Fail add domain for schedule checks. \nCannot check certificate for this domain. Error: %v", err)
 		}
@@ -264,20 +265,50 @@ func (bot *Bot) addUserIfNotExists(user *storage.User) *storage.User {
 	return user
 }
 
-func (bot *Bot) scheduleDomainsCheck(usersDomainsChan chan *storage.User, errorsChan chan error) {
+func (bot *Bot) scheduleDomainsCheck(usersDomainsChan chan *storage.User, errorsChan chan error, notifyDays []int) {
 	for {
 		select {
 		case user := <-usersDomainsChan:
 			//println("send message to " + user.Name)
 			for _, userDomain := range user.UserDomains {
-				msg := tgbotapi.NewMessage(user.TGId, certinfo.GetCertsInfo(userDomain.Domain, false))
+				info, certs, err2 := certinfo.GetCertInfo(userDomain.Domain, false)
+				if err2 != nil {
+					return
+				}
+				for _, cert := range certs {
 
-				_, err := bot.BotAPI.Send(msg)
-				if err != nil {
-					log.Println("Error in Dial", err)
-					errorsChan <- err
+					var msg *tgbotapi.MessageConfig
+
+					certLifeDays := getTimesDeltaInDays(cert.NotAfter, time.Now())
+
+					if certLifeDays < 0 {
+						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("❌ Certificate expired for domain %s", userDomain.Domain))
+					} else if intInSlice(certLifeDays, notifyDays) {
+						*msg = tgbotapi.NewMessage(user.TGId, fmt.Sprintf("🔥 %d days to expired certificate. \n%s", certLifeDays, info))
+					}
+
+					if msg != nil {
+						_, err := bot.BotAPI.Send(msg)
+						if err != nil {
+							log.Println("Error in Dial", err)
+							errorsChan <- err
+						}
+					}
 				}
 			}
 		}
 	}
+}
+
+func getTimesDeltaInDays(startTime time.Time, endTime time.Time) int {
+	return int(startTime.Sub(endTime).Hours() / 24)
+}
+
+func intInSlice(a int, list []int) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

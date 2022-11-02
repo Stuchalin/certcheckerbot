@@ -7,6 +7,7 @@ Simple bot to check certificate expiry date
 BOT_KEY=Secret telegram bot key
 DB_PATH=path to sqlite database
 DEBUG=true/false (enable or disable debug. default - false)
+EXPIRY_DAYS=[1,2,3,4,5,6,7,14,30,60,90]
 ```
 
 ## Available commands
@@ -24,6 +25,5 @@ DEBUG=true/false (enable or disable debug. default - false)
 
 **/remove_domain [domain_name]** - removes domain for schedule checks. For example: "/remove_domain google.com"
 
-## v0.2
+## v0.3
 * Work all base commands
-* Scheduler not worked yet
